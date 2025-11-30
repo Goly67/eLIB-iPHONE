@@ -10,7 +10,7 @@ function startQRScanner() {
         html5QrCode.stop().then(() => {
           const sessionToken = Date.now().toString();
           sessionStorage.setItem('qrSessionToken', sessionToken);
-          window.location.href = `secondScanActivity.html?token=${sessionToken}`;
+          window.location.href = `SecondScanActivity.html?token=${sessionToken}`;
         });
       }
     },
