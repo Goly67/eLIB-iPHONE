@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link rel="icon" type="image/x-icon" href="drawables/eLib-icon.png" />
+    <title>Feedback</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/feedback.css">
+</head>
+
+<body>
+    <div class="container">
+
+        <div class="topLogo">
+            <img src="drawables/logo2.png" alt="STI Logo">
+        </div>
+
+
+        <!-- User Info (balanced like finishScanActivity) -->
+        <div id="userInfo">
+            <div>
+                <div id="greetingRow"><span id="tvGreeting">Hi,</span><span id="tvStudentName">Loading...</span></div>
+                <div id="tvStudentID">ID: N/A</div>
+            </div>
+
+            <div id="tvCurrentTime">00:00:00</div>
+        </div>
+
+        <!-- Optional banner (keeps visual rhythm) -->
+        <div class="bannerCard" aria-hidden="true">
+            <img src="drawables/welcome_banner_lb.jpg" alt="banner">
+        </div>
+
+        <!-- Feedback form card -->
+        <div class="card" role="region" aria-labelledby="feedbackHeading">
+            <h2 id="feedbackHeading">How can we help you?</h2>
+
+            <label class="label" for="etStudentNumber">Student Number</label>
+            <input id="etStudentNumber" class="input" type="text" disabled aria-disabled="true" />
+
+            <label class="label" for="etSubject">Subject</label>
+            <input id="etSubject" class="input" type="text" placeholder="Subject" />
+
+            <label class="label" for="etDescription">Description</label>
+            <textarea id="etDescription" class="input" placeholder="Describe your feedback..."></textarea>
+
+            <button id="btnSubmitFeedback" class="button">Submit Feedback</button>
+        </div>
+    </div>
+
+    <!-- logout dialog -->
+    <div id="logoutDialog" role="dialog" aria-hidden="true">
+        <div id="logoutContent" role="document">
+            <div style="font-weight:700;font-size:18px;padding-bottom:12px">Are you sure you want to log out?</div>
+            <div class="dlgBtns">
+                <button id="btnLogoutYes">Yes</button>
+                <button id="btnLogoutNo">No</button>
+            </div>
+        </div>
+    </div>
+    <!-- bottom nav using drawables -->
+    <div id="bottomNav" role="navigation" aria-label="Bottom navigation">
+        <button onclick="navHome()" title="Home"><img src="drawables/home.svg" alt=""><span>Home</span></button>
+        <button onclick="navBlogs()" title="Blogs"><img src="drawables/blogs.svg" alt=""><span>Blogs</span></button>
+        <button onclick="navFeedback()" title="Feedback"><img src="drawables/feedback.svg"
+                alt=""><span>Feedback</span></button>
+        <button onclick="navLogout()" title="Logout"><img src="drawables/logout.svg" alt=""><span>Logout</span></button>
+    </div>
+
+    <div id="topToast" role="status" aria-live="polite"></div>
+
+    <script type="module" defer src="scripts/"></script>
+
+</body>
+
+</html>

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/x-icon" href="drawables/eLib-icon.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QR Scanner</title>
+  <link rel="stylesheet" href="styles/scan.css">
+</head>
+
+<body>
+
+  <div class="header">LOGIN QR Scanner</div>
+  <div class="subtitle">Point your camera to the QR code to log attendance</div>
+
+  <div id="qr-reader"></div>
+  <button id="backBtn" onclick="window.history.back()">Back</button>
+
+  <div class="top-toast" id="topToast"></div>
+
+  <script src="https://unpkg.com/html5-qrcode"></script>
+
+  <script defer src="scripts/scan.js"></script>
+
+</body>
+
+</html>

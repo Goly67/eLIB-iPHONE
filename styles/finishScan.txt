@@ -1,0 +1,395 @@
+/* Base */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: "Poppins", system-ui, Arial, sans-serif;
+        }
+
+        body {
+            background: #F9F9F9;
+            color: #111827;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        #scrollContainer {
+            padding: 16px;
+            padding-bottom: 88px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Header / user info */
+        #topHeader {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 12px;
+            padding-bottom: 12px;
+        }
+
+        #appLogo {
+            max-height: 40px;
+            max-width: 150px;
+            object-fit: contain;
+        }
+
+        #userInfo {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #fff;
+            padding: 16px;
+            margin-bottom: 25px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+
+        #userInfo>div {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        #greetingRow {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        #tvGreeting,
+        #tvStudentName {
+            font-size: 22px;
+            font-weight: 700;
+            color: #1E40AF;
+        }
+
+        #tvStudentID {
+            font-size: 14px;
+            color: #6B7280;
+        }
+
+        #tvCurrentTime {
+            font-size: 18px;
+            color: #000;
+        }
+
+        /* Banner */
+        .bannerCard {
+            width: 100%;
+            height: 140px;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 16px;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.08);
+        }
+
+        .bannerCard img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* Icons row */
+        #iconsRow {
+            display: flex;
+            gap: 12px;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .iconBlock {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .iconBtn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #EAF6FF;
+            cursor: pointer;
+            transition: transform .12s ease, box-shadow .12s ease;
+            color: #1E40AF;
+            /* icon color via currentColor */
+        }
+
+        .iconBtn:active {
+            transform: translateY(1px) scale(.995);
+        }
+
+        .iconLabel {
+            margin-top: 6px;
+            font-size: 14px;
+            color: #374151;
+            text-align: center;
+        }
+
+        /* SVG size */
+        .iconBtn svg {
+            width: 22px;
+            height: 22px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 1.8;
+        }
+
+        /* Section headers */
+        .sectionHeader {
+            font-weight: 700;
+            font-size: 20px;
+            padding: 8px 0;
+            margin-top: 20px;
+            color: #000;
+            background: #F6F6F6;
+            border-radius: 8px;
+            padding-left: 12px;
+        }
+
+        /* Horizontal card carousel */
+        .horizontalScroll {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            padding: 12px 4px;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+
+        .horizontalScroll::-webkit-scrollbar {
+            display: none;
+        }
+
+        .card {
+            position: relative;
+            width: 260px;
+            min-width: 260px;
+            height: 160px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+            cursor: pointer;
+            flex-shrink: 0;
+            background: #ddd;
+        }
+
+        .card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* IMPORTANT: removed big dark gradient from the blog cards (main screen).
+     Instead add a small translucent label behind the text so the image isn't washed. */
+        .cardOverlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: flex-end;
+            padding: 12px;
+            pointer-events: none;
+            /* gradient from opaque black → transparent */
+            background: linear-gradient(to top,
+                    rgba(0, 0, 0, 1) 0%,
+                    /* bottom: fully opaque */
+                    rgba(0, 0, 0, 0) 50%
+                    /* top: fully transparent */
+                );
+        }
+
+        .cardOverlay .title {
+            color: #ffffff;
+            padding: 1px 1px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            display: inline-block;
+            max-width: 92%;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+        }
+
+
+        /* Services smaller card height */
+        .serviceCard {
+            width: 200px;
+            min-width: 200px;
+            height: 160px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+            cursor: pointer;
+            position: relative;
+        }
+
+        .serviceCard img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* KEEP the dark gradient ONLY on services */
+        .serviceOverlay {
+            position: absolute;
+            inset: 0;
+            /* dark gradient specifically for services */
+            background: linear-gradient(180deg, rgba(0, 0, 0, 0.0) 40%, rgba(0, 0, 0, 0.55) 100%);
+            display: flex;
+            align-items: flex-end;
+            padding: 12px;
+        }
+
+        .serviceOverlay .title {
+            color: #fff;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        /* --- logout dialog styles & transitions --- */
+        #logoutDialog {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+            opacity: 0;
+            transition: opacity .25s ease
+        }
+
+        #logoutContent {
+            background: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            width: 320px;
+            max-width: 92%;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+            transform: translateY(6px);
+            transition: transform .25s ease, opacity .2s ease
+        }
+
+        #logoutDialog.show {
+            display: flex;
+            opacity: 1
+        }
+
+        #logoutDialog.show #logoutContent {
+            transform: translateY(0);
+            opacity: 1
+        }
+
+        .dlgBtns {
+            display: flex;
+            gap: 12px;
+            margin-top: 12px;
+            justify-content: center
+        }
+
+        .dlgBtns button {
+            flex: 1;
+            padding: 10px;
+            border-radius: 8px;
+            border: none;
+            color: #fff;
+            font-weight: 700;
+            cursor: pointer
+        }
+
+        #btnLogoutYes {
+            background: #125B02
+        }
+
+        #btnLogoutNo {
+            background: #9B0000
+        }
+
+        #bottomNav {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 60px;
+            background: #fff;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            box-shadow: 0 -1px 6px rgba(0, 0, 0, 0.06);
+            z-index: 50
+        }
+
+        #bottomNav button {
+            background: none;
+            border: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            color: #1E40AF;
+            cursor: pointer
+        }
+
+        #bottomNav img {
+            width: 22px;
+            height: 22px;
+            object-fit: contain;
+            filter: brightness(0) saturate(100%) invert(24%) sepia(90%) saturate(3587%) hue-rotate(197deg) brightness(98%) contrast(95%)
+        }
+
+        #topToast {
+            display: none;
+            position: fixed;
+            top: 18px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1E40AF;
+            color: white;
+            padding: 10px 18px;
+            border-radius: 8px;
+            z-index: 2000;
+            font-weight: 700
+        }
+
+        @media (max-width:520px) {
+            .card {
+                width: 220px;
+                min-width: 220px
+            }
+
+            .serviceCard {
+                width: 160px;
+                min-width: 160px;
+                height: 140px
+            }
+        }
+
+        /* Hover grow effect for cards and services */
+        .card,
+        .serviceCard {
+            transition: transform .20s ease, box-shadow .20s ease;
+        }
+
+        .card:hover,
+        .serviceCard:hover {
+            transform: scale(1.04);
+            box-shadow: 0 10px 26px rgba(0, 0, 0, 0.20);
+        }
+
+        @media (hover: hover) {
+
+            .card:hover,
+            .serviceCard:hover {
+                transform: scale(1.04);
+                box-shadow: 0 10px 26px rgba(0, 0, 0, 0.20);
+            }
+        }
