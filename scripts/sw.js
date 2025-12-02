@@ -1,21 +1,16 @@
-self.addEventListener("install", () => {
+self.addEventListener('install', (event) => {
+  // This forces the waiting service worker to become the active service worker.
   self.skipWaiting();
 });
 
-self.addEventListener('activate', event => {
+self.addEventListener('activate', (event) => {
+  // This allows the service worker to claim control of the page immediately.
   event.waitUntil(clients.claim());
 });
 
-// Send push notification every time a push message arrives
-self.addEventListener("push", event => {
-  // If no data is sent, default to the library reminder
-  const text = event.data?.text() || "PLEASE LOGOUT BEFORE EXITING THE LIBRARY";
-
-  event.waitUntil(
-    self.registration.showNotification("Library Reminder", {
-      body: text,
-      icon: "images/icons/icon-192x192.png",
-      vibrate: [200, 100, 200],
-    })
-  );
+// Handle messages (like SKIP_WAITING)
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });

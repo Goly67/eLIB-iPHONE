@@ -96,24 +96,19 @@ async function startPushNotifications() {
 
     // 2. Register & Wait for Controller
     try {
-        // Register
-        const registration = await navigator.serviceWorker.register('scripts/sw.js');
-        console.log('SW Registered:', registration);
-
-        if (!navigator.serviceWorker.controller) {
-            await new Promise(resolve => {
-                const onControllerChange = () => {
-                    navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange);
-                    resolve();
-                };
-                navigator.serviceWorker.addEventListener('controllerchange', onControllerChange);
-                // Also try to claim immediately in sw.js (clients.claim())
-            });
+        // Add a random query param to force fresh download of sw.js
+        _swRegistration = await navigator.serviceWorker.register('scripts/sw.js?v=' + Date.now());
+        
+        // Force update immediately
+        if (_swRegistration.waiting) {
+            _swRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
         }
-        console.log('SW is controlling the page.');
+        await _swRegistration.update();
 
+        console.log('Service worker registered:', _swRegistration);
     } catch (e) {
-        console.error('SW setup failed', e);
+        console.error('Service worker registration failed', e);
+        _swRegistration = null;
         return;
     }
 
