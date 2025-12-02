@@ -205,7 +205,7 @@ function checkIOSPWA() {
 
       <div class="install-card">
         <div class="install-title">Install App Required</div>
-        <div class="install-text">To use the scanner and notifications, please add this app to your home screen.</div>
+        <div class="install-text">To use the notifications, please add this app to your home screen.</div>
         
         <div class="steps-container">
             <!-- Step 1 -->
@@ -223,7 +223,6 @@ function checkIOSPWA() {
         </div>
 
         <div class="arrow-down">⬇</div>
-        <div style="font-size:12px; color:#555; margin-top:5px;">(Button is at bottom of browser)</div>
         
         <button class="dismiss-btn" id="dismissOverlay">I dont want notifications, close app</button>
       </div>
