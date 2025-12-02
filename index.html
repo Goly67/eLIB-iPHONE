@@ -3,12 +3,20 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <!-- iOS PWA Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="STI Attendance">
+  <link rel="apple-touch-icon" href="images/icons/icon-192x192.png">
+  <link rel="manifest" href="manifest.json">
+  
   <link rel="icon" type="image/x-icon" href="drawables/eLib-icon.png" />
   <title>STI College QR Attendance</title>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
     rel="stylesheet">
   <link rel="stylesheet" href="styles/style.css">
+
 </head>
 
 <body>
@@ -25,7 +33,15 @@
     <div class="subtitle">Your hub for discovery, reading, and research</div>
     <div class="subtitle-small">Tap below to log attendance.</div>
 
+    <!-- Main Primary Button -->
     <button id="btnScanQR">Scan to Login</button>
+    
+    <!-- Secondary Notification Button -->
+    <button id="btnEnableNotif">
+      <span>Enable Reminders</span>
+      <span>🔔</span>
+    </button>
+
   </div>
 
   <div class="version">Version 4.2</div>

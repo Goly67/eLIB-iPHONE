@@ -29,6 +29,21 @@ let currentFullStrand = null;
 const urlParams = new URLSearchParams(window.location.search);
 const token = urlParams.get('token');
 
+// Check if token exists in URL
+if (!token) {
+    alert('Unauthorized access. Please scan QR code first.');
+    window.location.href = 'index.html';
+    throw new Error('No QR token found');
+}
+
+const validToken = sessionStorage.getItem('qrSessionToken');
+if (validToken !== token) {
+    alert('Invalid session. Please scan QR code first.');
+    window.location.href = 'index.html';
+    throw new Error('Invalid QR token');
+}
+
+/*
     (function () {
       const ua = navigator.userAgent || navigator.vendor || window.opera;
       const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
@@ -56,7 +71,7 @@ if (!token) {
     window.location.href = 'scan.html';
 } else {
     sessionStorage.setItem('qrSessionToken', token); // <-- save token
-}
+} */
 
 function showTopToast(msg, ms = 2200) {
     topToast.textContent = msg;

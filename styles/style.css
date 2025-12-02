@@ -222,6 +222,34 @@ html, body {
   text-align: center;
 }
 
+/* Add this to your style.css or keep it here */
+    #btnEnableNotif {
+      margin-top: 15px;
+      background: transparent;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 50px;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 500;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: auto;
+      min-width: 200px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    #btnEnableNotif:active {
+      background: rgba(255, 255, 255, 0.1);
+      transform: scale(0.98);
+    }
+
 /* Small iPhones */
 @media (max-width: 380px) {
   .title1 {
