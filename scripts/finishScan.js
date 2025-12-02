@@ -83,82 +83,69 @@ function setCurrentStudentName(name) {
 }
 
 // start web notifications (register SW, request permission, then show every 30s)
-// start web notifications (register SW, request permission, then show every 30s)
 async function startPushNotifications() {
-    if (!('Notification' in window)) {
-        console.warn('Notifications not supported in this browser.');
-        return;
-    }
-    if (!('serviceWorker' in navigator)) {
-        console.warn('Service workers not supported in this browser.');
-        return;
-    }
+    if (!('Notification' in window)) return;
+    if (!('serviceWorker' in navigator)) return;
+    if (_pushIntervalId) return; // Already running
 
-    // If already running, don't start again
-    if (_pushIntervalId) return;
-
-    // CHECK PERMISSION FIRST (don't ask again if not granted, just log and exit)
+    // 1. Check Permission
     if (Notification.permission !== 'granted') {
-        console.warn('Notification permission not granted. User must enable from index.html first.');
-        showTopToast('Enable notifications from Settings to receive reminders.');
-        return; // EXIT: Do not request permission here (iOS will block it)
-    }
-
-    // Register service worker (ensure sw.js exists)
-    try {
-        _swRegistration = await navigator.serviceWorker.register('scripts/sw.js');
-        console.log('Service worker registered:', _swRegistration);
-    } catch (e) {
-        console.error('Service worker registration failed', e);
-        _swRegistration = null;
+        console.warn('Notification permission NOT granted.');
         return;
     }
 
-    // Wait for SW to be ready
+    // 2. Register & Wait for Controller
     try {
-        await navigator.serviceWorker.ready;
+        // Register
+        const registration = await navigator.serviceWorker.register('scripts/sw.js');
+        console.log('SW Registered:', registration);
+
+        if (!navigator.serviceWorker.controller) {
+            await new Promise(resolve => {
+                const onControllerChange = () => {
+                    navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange);
+                    resolve();
+                };
+                navigator.serviceWorker.addEventListener('controllerchange', onControllerChange);
+                // Also try to claim immediately in sw.js (clients.claim())
+            });
+        }
+        console.log('SW is controlling the page.');
+
     } catch (e) {
-        console.warn('Service worker ready failed', e);
+        console.error('SW setup failed', e);
+        return;
     }
 
-    // Immediately show one, then repeat every 30s
+    // 3. Define the Send Function
     const sendNotif = async () => {
-        console.log('Attempting to send notification...');
-        
+        console.log('Sending 30s reminder...');
         try {
-            // Try service worker notification first (required for iOS PWA background)
-            if (navigator.serviceWorker.controller) {
-                const registration = await navigator.serviceWorker.ready;
-                await registration.showNotification('PLEASE LOGOUT BEFORE EXITING THE LIBRARY', {
-                    body: 'Dont forget to logout before leaving.',
-                    icon: 'images/icons/icon-192x192.png',
-                    badge: 'images/icons/icon-192x192.png',
-                    tag: 'logout-reminder',
-                    renotify: true,
-                    requireInteraction: false, // Changed to false (iOS ignores requireInteraction)
-                    vibrate: [200, 100, 200]
-                });
-                console.log('Notification sent via SW.');
-            } else {
-                // Fallback for non-SW contexts
-                new Notification('PLEASE LOGOUT BEFORE EXITING THE LIBRARY', {
-                    body: 'Dont forget to logout before leaving.',
-                    icon: 'images/icons/icon-192x192.png'
-                });
-                console.log('Notification sent via Notification API.');
-            }
+            const reg = await navigator.serviceWorker.ready;
+            
+            // REQUIRED FOR iOS: Use "showNotification" from the registration
+            await reg.showNotification('LIBRARY REMINDER ⚠️', {
+                body: 'Please LOGOUT before exiting the library.',
+                icon: 'images/icons/icon-192x192.png',
+                tag: 'logout-reminder', // Replaces old notification
+                renotify: true, // Vibrate again
+                vibrate: [200, 100, 200],
+                // 'requireInteraction' is ignored on iOS but good for Desktop
+                requireInteraction: false 
+            });
         } catch (e) {
-            console.error('Could not show notification', e);
+            console.error('Notification send failed', e);
+            // Fallback
+            new Notification('LIBRARY REMINDER ⚠️', { 
+                body: 'Please LOGOUT before exiting the library.' 
+            });
         }
     };
 
-    // Show immediately
-    sendNotif();
-    
-    // Schedule repeated reminders every 30s
+    // 4. Start Loop
+    sendNotif(); // Show first one immediately
     _pushIntervalId = setInterval(sendNotif, PUSH_INTERVAL_MS);
-
-    console.log('Push reminder started (every 30s).');
+    console.log('Notification loop started.');
 }
 
 // stop the repeating notifications
