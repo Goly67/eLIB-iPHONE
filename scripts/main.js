@@ -212,7 +212,6 @@ function checkIOSPWA() {
             <div class="step-row">
                 <span>1. Tap Share</span>
                 <img src="images/icons/share.png" class="ios-share-icon" alt="Share">
-                <span>on the top right</span>
             </div>
             
             <!-- Step 2 -->
