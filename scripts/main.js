@@ -52,16 +52,16 @@ async function requestNotificationPermission() {
   try {
     // 3. Request permission
     const perm = await Notification.requestPermission();
-    
+
     if (perm === "granted") {
       showTopToast("Notifications enabled! ✅");
-      
+
       // Test notification
       if (navigator.serviceWorker.controller) {
-         navigator.serviceWorker.controller.postMessage({ type: 'TEST_NOTIF' });
+        navigator.serviceWorker.controller.postMessage({ type: 'TEST_NOTIF' });
       } else {
-         // Fallback if SW isn't ready yet
-         new Notification("Setup Complete", { body: "You will receive library reminders." });
+        // Fallback if SW isn't ready yet
+        new Notification("Setup Complete", { body: "You will receive library reminders." });
       }
       return true;
     } else {
@@ -100,10 +100,10 @@ function checkIOSPWA() {
 
   // Only show if on iOS AND NOT installed (browser tab)
   if (isIOS && !isStandalone) {
-    
+
     const overlay = document.createElement('div');
     overlay.id = 'ios-install-overlay';
-    
+
     overlay.style.cssText = `
       position: fixed;
       top: 0;
@@ -171,8 +171,7 @@ function checkIOSPWA() {
         .ios-share-icon {
           width: 24px;
           height: 24px;
-          color: #fff;
-          /* filter: invert(1); <--- Remove this line if your share.png is already white/light */
+          filter: invert(1); /* Turns Black -> White */
         }
         .arrow-down {
           font-size: 30px;
@@ -203,13 +202,13 @@ function checkIOSPWA() {
         </div>
         
         <div class="step-row">
-          <span>2. Scroll down and PRESS</span>
+          <span>2. Scroll down and PRESS</span><br>
           <span style="background:#333; padding:2px 8px; border-radius:6px;">Add to Home Screen</span>
         </div>
 
         <div class="arrow-down">⬇</div>
         
-        <button class="dismiss-btn" id="dismissOverlay">Close warning. (Notifications are important, be aware.)</button>
+        <button class="dismiss-btn" id="dismissOverlay">Close warning (Notifications are important, be aware.)</button>
       </div>
     `;
 
@@ -251,29 +250,29 @@ signInAnonymously(auth)
 
 
 if (btnScan) {
-    btnScan.addEventListener('click', async () => {
-      const ok = await requestCameraAccess();
-      if (ok) {
-        setTimeout(() => { window.location.href = "scan.html"; }, 150);
-      }
-    });
+  btnScan.addEventListener('click', async () => {
+    const ok = await requestCameraAccess();
+    if (ok) {
+      setTimeout(() => { window.location.href = "scan.html"; }, 150);
+    }
+  });
 }
 
 // Hide button on load if already granted
 if (btnNotif && Notification.permission === 'granted') {
-    btnNotif.style.display = 'none';
+  btnNotif.style.display = 'none';
 }
 
 // IMPORTANT: You need a separate button for this on iOS
 // You cannot ask for notifications automatically on page load in iOS PWA
 if (btnNotif) {
-    btnNotif.addEventListener('click', async () => {
-        console.log("Notification button clicked!"); // Debug log
-        await requestNotificationPermission();
-        
-        // If granted, hide button immediately for better UX
-        if (Notification.permission === 'granted') {
-            btnNotif.style.display = 'none';
-        }
-    });
+  btnNotif.addEventListener('click', async () => {
+    console.log("Notification button clicked!"); // Debug log
+    await requestNotificationPermission();
+
+    // If granted, hide button immediately for better UX
+    if (Notification.permission === 'granted') {
+      btnNotif.style.display = 'none';
+    }
+  });
 }
