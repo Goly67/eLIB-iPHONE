@@ -93,26 +93,135 @@ async function requestCameraAccess() {
   }
 }
 
-// ---------- iOS PWA Instructions ----------
-// Only show this if on iOS AND not in standalone mode (browser tab)
+// ---------- iOS PWA Instructions (High Visibility) ----------
 function checkIOSPWA() {
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
 
+  // Only show if on iOS AND NOT installed (browser tab)
   if (isIOS && !isStandalone) {
-    // Create a simple banner dynamically
-    const banner = document.createElement('div');
-    banner.style.cssText = "position:fixed; bottom:0; left:0; width:100%; background:rgba(0,0,0,0.9); color:white; padding:20px; text-align:center; z-index:9999; font-family:sans-serif;";
-    banner.innerHTML = `
-      <p style="margin:0 0 10px 0;">To enable notifications, install this app:</p>
-      <p style="margin:0;">Tap <img src="https://img.icons8.com/ios-filled/20/ffffff/share-rounded.png" style="vertical-align:middle"> then "Add to Home Screen"</p>
-      <button id="closeBanner" style="position:absolute; top:5px; right:10px; background:none; border:none; color:#aaa; font-size:20px;">&times;</button>
-    `;
-    document.body.appendChild(banner);
     
-    document.getElementById('closeBanner').onclick = () => banner.remove();
+    const overlay = document.createElement('div');
+    overlay.id = 'ios-install-overlay';
+    
+    overlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 99999;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: center;
+      padding-bottom: 40px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      animation: fadeIn 0.5s ease-out;
+    `;
+
+    overlay.innerHTML = `
+      <style>
+        @keyframes bounce {
+          0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
+          40% {transform: translateY(-10px);}
+          60% {transform: translateY(-5px);}
+        }
+        @keyframes fadeIn {
+          from {opacity: 0;}
+          to {opacity: 1;}
+        }
+        .install-card {
+          background: #1c1c1e;
+          border-top: 1px solid #333;
+          width: 100%;
+          max-width: 400px;
+          padding: 30px 20px;
+          border-radius: 20px 20px 0 0;
+          text-align: center;
+          color: white;
+          box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
+        }
+        .install-title {
+          font-size: 20px;
+          font-weight: 700;
+          margin-bottom: 10px;
+          color: #fff;
+        }
+        .install-text {
+          font-size: 15px;
+          line-height: 1.5;
+          color: #aaa;
+          margin-bottom: 20px;
+        }
+        .step-row {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          margin-bottom: 8px;
+          font-size: 16px;
+          font-weight: 500;
+        }
+        /* UPDATED CLASS: No filter needed if your icon is already white/colored appropriately, 
+           but 'filter: invert(1)' makes black icons white if needed. */
+        .ios-share-icon {
+          width: 24px;
+          height: 24px;
+          /* filter: invert(1); <--- Remove this line if your share.png is already white/light */
+        }
+        .arrow-down {
+          font-size: 30px;
+          margin-top: 15px;
+          animation: bounce 2s infinite;
+          color: #007AFF;
+        }
+        .dismiss-btn {
+          margin-top: 20px;
+          background: transparent;
+          border: 1px solid #444;
+          color: #888;
+          padding: 8px 20px;
+          border-radius: 20px;
+          font-size: 12px;
+        }
+      </style>
+
+      <div class="install-card">
+        <div class="install-title">Install App Required</div>
+        <div class="install-text">To use the QR Scanner and receive notifications, you must add this app to your home screen.</div>
+        
+        <div class="step-row">
+          <span>1. Tap</span>
+          <!-- UPDATED IMAGE SOURCE -->
+          <img src="images/icons/share.png" class="ios-share-icon" alt="Share">
+          <span>below</span>
+        </div>
+        
+        <div class="step-row">
+          <span>2. Select</span>
+          <span style="background:#333; padding:2px 8px; border-radius:6px;">Add to Home Screen</span>
+        </div>
+
+        <div class="arrow-down">⬇</div>
+        
+        <button class="dismiss-btn" id="dismissOverlay">Close (App won't work correctly)</button>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    document.getElementById('dismissOverlay').onclick = () => {
+      overlay.style.opacity = '0';
+      setTimeout(() => overlay.remove(), 300);
+    };
   }
 }
+
+
 
 // ---------- Main Logic ----------
 
