@@ -197,7 +197,7 @@ signInAnonymously(auth).then(() => {
             localStorage.setItem('studentLogKey', newSessionRef.key);
 
             // --- TRIGGER NOTIFICATION HERE ---
-            triggerNotification("Login Successful", `Welcome, ${name}! Don't forget to logout later.`);
+            triggerNotification("Login Successful", `Welcome, ${name}! Do not forget to log out before leaving the library.`);
 
             showTopToast('Attendance logged!');
             setTimeout(() => {

@@ -49,11 +49,10 @@ let activeToken = null;
 // store canonical full name (for DB uses) while showing first name only on UI
 let _fullTvName = '';
 
-// ----------------- PUSH / NOTIFICATION STATE -----------------
-let _swRegistration = null;
-let _pushIntervalId = null;            // the 30s interval id
-const PUSH_INTERVAL_MS = 30 * 1000;    // 30 seconds as requested
-// -------------------------------------------------------------
+// ----------------- NOTIFICATION STATE -----------------
+let _reminderTimeoutId = null;
+const REMINDER_DELAY_MS = 3 * 60 * 1000; // 3 Minutes delay (Adjust as needed)
+// ------------------------------------------------------
 
 // helper: toast
 function showTopToast(msg, ms = 2500) {
@@ -82,82 +81,79 @@ function setCurrentStudentName(name) {
     tvName.textContent = getFirstName(_fullTvName) || '';
 }
 
-// start web notifications (register SW, request permission, then show every 30s)
-async function startPushNotifications() {
+// start web notifications (One-time delayed reminder)
+function startPushNotifications() {
     if (!('Notification' in window)) return;
-    if (!('serviceWorker' in navigator)) return;
-    if (_pushIntervalId) return; // Already running
+    
+    if (Notification.permission !== 'granted') return;
 
-    // 1. Check Permission
-    if (Notification.permission !== 'granted') {
-        console.warn('Notification permission NOT granted.');
-        return;
-    }
+    console.log(`[NOTIF] Reminder scheduled for ${REMINDER_DELAY_MS / 60000} minutes from now.`);
 
-    // 2. Register & Wait for Controller
-    try {
-        // Add a random query param to force fresh download of sw.js
-        _swRegistration = await navigator.serviceWorker.register('scripts/sw.js?v=' + Date.now());
+    // Clear any existing timeout just in case
+    if (_reminderTimeoutId) clearTimeout(_reminderTimeoutId);
+
+    _reminderTimeoutId = setTimeout(async () => {
+        console.log('[NOTIF] Triggering delayed reminder...');
         
-        // Force update immediately
-        if (_swRegistration.waiting) {
-            _swRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
-        }
-        await _swRegistration.update();
-
-        console.log('Service worker registered:', _swRegistration);
-    } catch (e) {
-        console.error('Service worker registration failed', e);
-        _swRegistration = null;
-        return;
-    }
-
-    // 3. Define the Send Function
-    const sendNotif = async () => {
-        console.log('Sending 30s reminder...');
         try {
-            const reg = await navigator.serviceWorker.ready;
-            
-            // REQUIRED FOR iOS: Use "showNotification" from the registration
-            await reg.showNotification('LIBRARY REMINDER ⚠️', {
-                body: 'Please LOGOUT before exiting the library.',
-                icon: 'images/icons/icon-192x192.png',
-                tag: 'logout-reminder', // Replaces old notification
-                renotify: true, // Vibrate again
-                vibrate: [200, 100, 200],
-                // 'requireInteraction' is ignored on iOS but good for Desktop
-                requireInteraction: false 
-            });
+            // Try Service Worker first (Best for Mobile/PWA)
+            if ('serviceWorker' in navigator) {
+                // Ensure we have a registration
+                let reg = await navigator.serviceWorker.getRegistration();
+                if (!reg) {
+                    reg = await navigator.serviceWorker.register('scripts/sw.js');
+                }
+                
+                // Wait for active
+                if (!reg.active) {
+                    await new Promise(resolve => {
+                        const waitWorker = reg.installing || reg.waiting;
+                        if (!waitWorker) { resolve(); return; }
+                        waitWorker.addEventListener('statechange', () => {
+                            if (waitWorker.state === 'activated') resolve();
+                        });
+                    });
+                }
+
+                await reg.showNotification('LIBRARY REMINDER ⚠️', {
+                    body: 'You have been logged in for a while. Please LOGOUT before exiting.',
+                    icon: 'images/icons/icon-192x192.png',
+                    tag: 'logout-reminder',
+                    vibrate: [200, 100, 200],
+                    requireInteraction: false
+                });
+                console.log('[NOTIF] Sent via Service Worker');
+            } else {
+                throw new Error('No SW support');
+            }
         } catch (e) {
-            console.error('Notification send failed', e);
-            // Fallback
-            new Notification('LIBRARY REMINDER ⚠️', { 
-                body: 'Please LOGOUT before exiting the library.' 
+            console.warn('[NOTIF] SW failed, using fallback:', e);
+            // Fallback to standard Notification API
+            new Notification('LIBRARY REMINDER ⚠️', {
+                body: 'You have been logged in for a while. Please LOGOUT before exiting.',
+                icon: 'images/icons/icon-192x192.png'
             });
         }
-    };
-
-    // 4. Start Loop
-    sendNotif(); // Show first one immediately
-    _pushIntervalId = setInterval(sendNotif, PUSH_INTERVAL_MS);
-    console.log('Notification loop started.');
+    }, REMINDER_DELAY_MS);
 }
 
-// stop the repeating notifications
+// stop/cancel the delayed reminder
 async function stopPushNotifications() {
-    if (_pushIntervalId) {
-        clearInterval(_pushIntervalId);
-        _pushIntervalId = null;
+    if (_reminderTimeoutId) {
+        clearTimeout(_reminderTimeoutId);
+        _reminderTimeoutId = null;
+        console.log('[NOTIF] Reminder cancelled.');
     }
-
-    // optionally clear existing notifications from SW
-    try {
-        if (_swRegistration && _swRegistration.getNotifications) {
-            const notifs = await _swRegistration.getNotifications({ tag: 'logout-reminder' });
-            notifs.forEach(n => n.close());
-        }
-    } catch (e) {
-        console.warn('Clearing notifications failed', e);
+    
+    // Clear any visible notifications
+    if ('serviceWorker' in navigator) {
+        try {
+            const reg = await navigator.serviceWorker.getRegistration();
+            if (reg) {
+                const notifs = await reg.getNotifications({ tag: 'logout-reminder' });
+                notifs.forEach(n => n.close());
+            }
+        } catch (e) { /* ignore */ }
     }
 }
 
