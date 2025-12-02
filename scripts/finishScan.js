@@ -83,6 +83,7 @@ function setCurrentStudentName(name) {
 }
 
 // start web notifications (register SW, request permission, then show every 30s)
+// start web notifications (register SW, request permission, then show every 30s)
 async function startPushNotifications() {
     if (!('Notification' in window)) {
         console.warn('Notifications not supported in this browser.');
@@ -96,19 +97,14 @@ async function startPushNotifications() {
     // If already running, don't start again
     if (_pushIntervalId) return;
 
-    // Ask permission
-    try {
-        const perm = await Notification.requestPermission();
-        if (perm !== 'granted') {
-            console.warn('Notification permission not granted:', perm);
-            return;
-        }
-    } catch (e) {
-        console.warn('Notification permission request failed', e);
-        return;
+    // CHECK PERMISSION FIRST (don't ask again if not granted, just log and exit)
+    if (Notification.permission !== 'granted') {
+        console.warn('Notification permission not granted. User must enable from index.html first.');
+        showTopToast('Enable notifications from Settings to receive reminders.');
+        return; // EXIT: Do not request permission here (iOS will block it)
     }
 
-    // Register service worker (ensure sw.js exists at site root)
+    // Register service worker (ensure sw.js exists)
     try {
         _swRegistration = await navigator.serviceWorker.register('scripts/sw.js');
         console.log('Service worker registered:', _swRegistration);
@@ -118,40 +114,51 @@ async function startPushNotifications() {
         return;
     }
 
-    // Immediately show one, then repeat every 30s
+    // Wait for SW to be ready
     try {
-        const sendNotif = () => {
-            if (!_swRegistration) return;
-            // Use registration.showNotification for best behavior
-            try {
-                _swRegistration.showNotification('PLEASE LOGOUT BEFORE EXITING THE LIBRARY', {
-                    body: 'Please logout before exiting the library',
-                    tag: 'logout-reminder', // tag allows replacement behavior on some browsers
-                    renotify: true,
-                    requireInteraction: true // keeps notification visible on many browsers
-                });
-            } catch (e) {
-                // fallback to window Notification if SW fails
-                try {
-                    new Notification('PLEASE LOGOUT BEFORE EXITING THE LIBRARY', {
-                        body: 'Please logout before exiting the library',
-                        requireInteraction: true
-                    });
-                } catch (er) {
-                    console.warn('Could not show notification', er);
-                }
-            }
-        };
-
-        // show immediately
-        sendNotif();
-        // schedule repeated reminders every 30s
-        _pushIntervalId = setInterval(sendNotif, PUSH_INTERVAL_MS);
-
-        console.log('Push reminder started (every 30s).');
+        await navigator.serviceWorker.ready;
     } catch (e) {
-        console.error('Starting push loop failed', e);
+        console.warn('Service worker ready failed', e);
     }
+
+    // Immediately show one, then repeat every 30s
+    const sendNotif = async () => {
+        console.log('Attempting to send notification...');
+        
+        try {
+            // Try service worker notification first (required for iOS PWA background)
+            if (navigator.serviceWorker.controller) {
+                const registration = await navigator.serviceWorker.ready;
+                await registration.showNotification('PLEASE LOGOUT BEFORE EXITING THE LIBRARY', {
+                    body: 'Dont forget to logout before leaving.',
+                    icon: 'images/icons/icon-192x192.png',
+                    badge: 'images/icons/icon-192x192.png',
+                    tag: 'logout-reminder',
+                    renotify: true,
+                    requireInteraction: false, // Changed to false (iOS ignores requireInteraction)
+                    vibrate: [200, 100, 200]
+                });
+                console.log('Notification sent via SW.');
+            } else {
+                // Fallback for non-SW contexts
+                new Notification('PLEASE LOGOUT BEFORE EXITING THE LIBRARY', {
+                    body: 'Dont forget to logout before leaving.',
+                    icon: 'images/icons/icon-192x192.png'
+                });
+                console.log('Notification sent via Notification API.');
+            }
+        } catch (e) {
+            console.error('Could not show notification', e);
+        }
+    };
+
+    // Show immediately
+    sendNotif();
+    
+    // Schedule repeated reminders every 30s
+    _pushIntervalId = setInterval(sendNotif, PUSH_INTERVAL_MS);
+
+    console.log('Push reminder started (every 30s).');
 }
 
 // stop the repeating notifications
@@ -430,12 +437,6 @@ async function performManualLogout() {
         setTimeout(() => window.location.href = 'thankyou.html', 900);
     }
 }
-
-setInterval(() => {
-  if (navigator.serviceWorker.controller) {
-    navigator.serviceWorker.controller.postMessage("trigger-push");
-  }
-}, 30000);
 
 /* small utility actions */
 window.openHelp = () => window.open('https://library.sticollegesurigao.com/contact-us/', '_blank');
