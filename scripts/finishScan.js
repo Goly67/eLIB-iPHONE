@@ -11,22 +11,21 @@ const firebaseConfig = {
     messagingSenderId: "817516970962",
     appId: "1:817516970962:web:13b35185538cd472eebe0b"
 };
+
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
 
 // mark token invalid on SessionsByToken so it cannot be reused
 async function invalidateToken(tok, extra = {}) {
-  if (!tok) return;
-  try {
-    const now = Date.now();
-    await update(ref(db, `SessionsByToken/${tok}`), { invalidated: true, logoutTime: now, ...extra });
-    console.log('Token invalidated:', tok);
-  } catch (e) {
-    console.warn('Failed to invalidate token', e);
-  }
+    if (!tok) return;
+    try {
+        const now = Date.now();
+        await update(ref(db, `SessionsByToken/${tok}`), { invalidated: true, logoutTime: now, ...extra });
+    } catch (e) {
+        console.warn('Failed to invalidate token', e);
+    }
 }
-
 
 // UI refs
 const tvCurrentTime = document.getElementById('tvCurrentTime');
@@ -45,16 +44,13 @@ const askCancel = document.getElementById('askStudentCancel');
 let currentStudentName = '';
 let currentStudentID = '';
 let activeToken = null;
-
-// store canonical full name (for DB uses) while showing first name only on UI
 let _fullTvName = '';
 
 // ----------------- NOTIFICATION STATE -----------------
 let _reminderTimeoutId = null;
-const REMINDER_DELAY_MS = 3 * 60 * 1000; // 3 Minutes delay (Adjust as needed)
+const REMINDER_DELAY_MS = 10 * 1000; // TEST: 10 Seconds (Change to 3 * 60 * 1000 later)
 // ------------------------------------------------------
 
-// helper: toast
 function showTopToast(msg, ms = 2500) {
     if (!topToast) return;
     topToast.textContent = msg;
@@ -63,17 +59,14 @@ function showTopToast(msg, ms = 2500) {
     showTopToast._t = setTimeout(() => topToast.style.display = 'none', ms);
 }
 
-// small helper: return first token of a full name (or empty string)
 function getFirstName(full) {
     if (!full) return '';
     return String(full).trim().split(/\s+/)[0] || '';
 }
 
-// Public: store full name for DB and show only the first name in the UI
 function setCurrentStudentName(name) {
     _fullTvName = (name || '').toString();
     try { localStorage.setItem('studentName', _fullTvName); } catch (e) { /* ignore */ }
-
     if (!tvName) return;
     tvName.style.whiteSpace = 'nowrap';
     tvName.style.overflow = 'hidden';
@@ -81,40 +74,44 @@ function setCurrentStudentName(name) {
     tvName.textContent = getFirstName(_fullTvName) || '';
 }
 
-// start web notifications (One-time delayed reminder)
-function startPushNotifications() {
+// ------------------------------------------------------
+// START NOTIFICATION LOGIC
+// ------------------------------------------------------
+async function startPushNotifications() {
+    console.log(`[NOTIF] Starting setup. Delay: ${REMINDER_DELAY_MS}ms`);
+
     if (!('Notification' in window)) return;
-    
-    if (Notification.permission !== 'granted') return;
+    if (Notification.permission !== 'granted') {
+        console.warn('[NOTIF] No permission');
+        return; 
+    }
 
-    console.log(`[NOTIF] Reminder scheduled for ${REMINDER_DELAY_MS / 60000} minutes from now.`);
-
-    // Clear any existing timeout just in case
+    // Clear old
     if (_reminderTimeoutId) clearTimeout(_reminderTimeoutId);
 
-    _reminderTimeoutId = setTimeout(async () => {
-        console.log('[NOTIF] Triggering delayed reminder...');
-        
+    // Register SW if missing
+    if ('serviceWorker' in navigator) {
         try {
-            // Try Service Worker first (Best for Mobile/PWA)
-            if ('serviceWorker' in navigator) {
-                // Ensure we have a registration
-                let reg = await navigator.serviceWorker.getRegistration();
-                if (!reg) {
-                    reg = await navigator.serviceWorker.register('scripts/sw.js');
-                }
-                
-                // Wait for active
-                if (!reg.active) {
-                    await new Promise(resolve => {
-                        const waitWorker = reg.installing || reg.waiting;
-                        if (!waitWorker) { resolve(); return; }
-                        waitWorker.addEventListener('statechange', () => {
-                            if (waitWorker.state === 'activated') resolve();
-                        });
-                    });
-                }
+            let reg = await navigator.serviceWorker.getRegistration();
+            if (!reg) {
+                reg = await navigator.serviceWorker.register('scripts/sw.js');
+                console.log('[NOTIF] SW Registered new');
+            }
+            // Wait for SW ready
+            await navigator.serviceWorker.ready;
+        } catch (e) {
+            console.error('[NOTIF] SW Error', e);
+        }
+    }
 
+    // Set Timeout
+    _reminderTimeoutId = setTimeout(async () => {
+        console.log('[NOTIF] Timeout reached! Firing...');
+        
+        // Try Service Worker Method (Best for iOS PWA)
+        if ('serviceWorker' in navigator) {
+            const reg = await navigator.serviceWorker.ready;
+            try {
                 await reg.showNotification('LIBRARY REMINDER ⚠️', {
                     body: 'You have been logged in for a while. Please LOGOUT before exiting.',
                     icon: 'images/icons/icon-192x192.png',
@@ -122,53 +119,42 @@ function startPushNotifications() {
                     vibrate: [200, 100, 200],
                     requireInteraction: false
                 });
-                console.log('[NOTIF] Sent via Service Worker');
-            } else {
-                throw new Error('No SW support');
+                console.log('[NOTIF] Sent via SW');
+            } catch (e) {
+                console.warn('[NOTIF] SW showNotification failed', e);
+                // Fallback
+                new Notification('LIBRARY REMINDER ⚠️', {
+                    body: 'You have been logged in for a while. Please LOGOUT before exiting.',
+                    icon: 'images/icons/icon-192x192.png'
+                });
             }
-        } catch (e) {
-            console.warn('[NOTIF] SW failed, using fallback:', e);
-            // Fallback to standard Notification API
+        } else {
+            // Standard
             new Notification('LIBRARY REMINDER ⚠️', {
                 body: 'You have been logged in for a while. Please LOGOUT before exiting.',
                 icon: 'images/icons/icon-192x192.png'
             });
         }
+
     }, REMINDER_DELAY_MS);
 }
 
-// stop/cancel the delayed reminder
-async function stopPushNotifications() {
+function stopPushNotifications() {
     if (_reminderTimeoutId) {
         clearTimeout(_reminderTimeoutId);
         _reminderTimeoutId = null;
-        console.log('[NOTIF] Reminder cancelled.');
-    }
-    
-    // Clear any visible notifications
-    if ('serviceWorker' in navigator) {
-        try {
-            const reg = await navigator.serviceWorker.getRegistration();
-            if (reg) {
-                const notifs = await reg.getNotifications({ tag: 'logout-reminder' });
-                notifs.forEach(n => n.close());
-            }
-        } catch (e) { /* ignore */ }
     }
 }
+// ------------------------------------------------------
 
-// Watch for container/viewport resize so we can re-apply the first-name display (keeps it stable)
+// Watch for resize
 if (typeof ResizeObserver !== 'undefined') {
     const ro = new ResizeObserver(() => setCurrentStudentName(_fullTvName));
     ro.observe(tvName ? (tvName.parentElement || tvName) : document.body);
 } else {
-    // fallback
     window.addEventListener('resize', () => setCurrentStudentName(_fullTvName));
 }
 
-//
-// time + greeting
-//
 function updateTimeAndGreeting() {
     const now = new Date();
     if (tvCurrentTime) tvCurrentTime.textContent = now.toLocaleTimeString();
@@ -178,7 +164,6 @@ function updateTimeAndGreeting() {
 updateTimeAndGreeting();
 setInterval(updateTimeAndGreeting, 1000);
 
-// read token from URL
 const params = new URLSearchParams(window.location.search);
 const token = params.get('token') || null;
 if (token) {
@@ -188,7 +173,6 @@ if (token) {
     activeToken = localStorage.getItem('activeToken') || null;
 }
 
-// ask modal controls
 function openAskModal() {
     if (!askModal) return;
     askModal.style.display = 'flex';
@@ -206,10 +190,8 @@ askSave.addEventListener('click', () => {
 });
 askCancel.addEventListener('click', () => { closeAskModal(); showTopToast('Student ID required'); });
 
-// Firebase: sign in
 signInAnonymously(auth).then(() => {
     showTopToast('Data gathered successfully', 1200);
-    // If token present, load session; else try loadStudentData (localStorage)
     if (activeToken) {
         loadStudentFromToken(activeToken);
     } else {
@@ -222,10 +204,6 @@ signInAnonymously(auth).then(() => {
     showTopToast('Auth failed: ' + (err && err.message ? err.message : ''));
 });
 
-// small logout monitor simplified (we already have a monitor in other code but notifications are separate)
-let _sessionLoginTime = null;
-
-// load student from SessionsByToken/{token}
 async function loadStudentFromToken(tok) {
     if (!tok) return;
     try {
@@ -237,36 +215,29 @@ async function loadStudentFromToken(tok) {
         }
         const data = snap.val();
 
-        // If token already invalidated or logoutTime exists -> refuse
         if (data.invalidated === true || data.logoutTime) {
             showTopToast('This token has already been used (logged out).');
-            // clear any local session state and force user back to index
             localStorage.removeItem('activeToken');
             localStorage.removeItem('studentNum');
             localStorage.removeItem('studentName');
             localStorage.removeItem('studentID');
-            // replace history so back cannot return to finishScanActivity
             setTimeout(() => location.replace('index.html'), 850);
             return;
         }
 
         const name = data.name || data.studentName || data.fullName || 'Unknown';
         const studentNumber = data.studentNumber || data.id || data.studentNum || data.studentID || '';
-        // save to localStorage
+        
         localStorage.setItem('studentNum', studentNumber);
         localStorage.setItem('studentName', name);
         localStorage.setItem('studentID', studentNumber);
         localStorage.setItem('activeToken', tok);
         currentStudentName = name; currentStudentID = studentNumber; activeToken = tok;
-        setCurrentStudentName(name); // shows first name only
+        setCurrentStudentName(name);
         tvId.textContent = 'ID: ' + studentNumber;
         showTopToast('Welcome ' + getFirstName(name) + '!');
 
-        // Save login time (if provided) for any logic; otherwise Date.now()
-        const loginTimeFromDb = typeof data.loginTime === 'number' ? data.loginTime : (data.loginTime ? Number(data.loginTime) : null);
-        _sessionLoginTime = loginTimeFromDb || Date.now();
-
-        // START the 30s push notifications (annoying reminders)
+        // CALL NOTIFICATION START
         startPushNotifications();
 
     } catch (e) {
@@ -276,7 +247,6 @@ async function loadStudentFromToken(tok) {
     }
 }
 
-// fetch Students/{studentNum}
 async function fetchStudentByNumber(studentNum) {
     if (!studentNum) return;
     try {
@@ -300,30 +270,20 @@ async function fetchStudentByNumber(studentNum) {
         setCurrentStudentName(name);
         tvId.textContent = 'ID: ' + id;
         showTopToast('Data loaded successfully');
-
-        // start notifications if you want when fetching by manual ID (optional)
-        // startPushNotifications();
-
     } catch (err) {
         console.error(err);
         showTopToast('Error loading student data');
     }
 }
 
-/* NAV helpers requested */
-// return to home and keep token in URL
 function navHome() {
     const tok = localStorage.getItem('activeToken') || '';
     if (tok) window.location.href = `finishScanActivity.html?token=${tok}`;
     else window.location.href = 'finishScanActivity.html';
 }
 window.navHome = navHome;
-
-// open blogs
 function navBlogs() { window.open('https://www.sti.edu/blog1.asp', '_blank'); }
 window.navBlogs = navBlogs;
-
-// feedback: auto-redirect to feedback.html with studentId & token
 function navFeedback() {
     const studentId = localStorage.getItem('studentID') || localStorage.getItem('studentNum') || '';
     const tok = localStorage.getItem('activeToken') || '';
@@ -332,8 +292,6 @@ function navFeedback() {
     window.location.href = url;
 }
 window.navFeedback = navFeedback;
-
-// logout flow (dialog)
 function navLogout() {
     if (!logoutDialog) return;
     logoutDialog.style.display = 'flex';
@@ -358,13 +316,10 @@ btnLogoutNo.addEventListener('click', () => {
     hideLogoutDialog(() => { });
 });
 
-// adapted performManualLogout (updates Students/{studentNum}/sessions and StudentLogs)
 async function performManualLogout() {
     const studentNum = localStorage.getItem('studentNum');
-    // For DB writes use stored full name (not the displayed first name)
     const name = localStorage.getItem('studentName') || _fullTvName || '';
     if (!studentNum) {
-        // final fallback: clear local and redirect
         localStorage.removeItem('studentNum'); localStorage.removeItem('studentName'); localStorage.removeItem('studentID');
         showTopToast('Logged out');
         setTimeout(() => window.location.href = 'thankyou.html', 700);
@@ -409,14 +364,12 @@ async function performManualLogout() {
             console.warn("Token invalidate failed:", e);
         }
 
-        // stop notifications and clear session
-        await stopPushNotifications();
+        stopPushNotifications();
         localStorage.removeItem('studentNum'); localStorage.removeItem('studentName'); localStorage.removeItem('studentID'); localStorage.removeItem('activeToken');
         setTimeout(() => window.location.href = 'thankyou.html', 900);
     }
 }
 
-/* small utility actions */
 window.openHelp = () => window.open('https://library.sticollegesurigao.com/contact-us/', '_blank');
 window.openLibrary = () => window.open('https://login.ebsco.com/', '_blank');
 window.openELMS = () => window.open('https://elms.sti.edu/', '_blank');
