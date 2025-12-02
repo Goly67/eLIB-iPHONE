@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
-import { getDatabase, ref, get, child, push, set } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-database.js";
+import { getDatabase, ref, get, child, set, update, push } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-database.js";
 import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -16,198 +16,369 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
 
-const studentNumber = document.getElementById('studentNumber');
-const studentName = document.getElementById('studentName');
-const strandSelect = document.getElementById('strandSelect');
-const gradeSelect = document.getElementById('gradeSelect');
-const btnSubmit = document.getElementById('btnSubmit');
-const topToast = document.getElementById('topToast');
-
-let currentFullStrand = null;
-
-// QR token from scan.html
-const urlParams = new URLSearchParams(window.location.search);
-const token = urlParams.get('token');
-
-// Check if token exists in URL
-if (!token) {
-    alert('Unauthorized access. Please scan QR code first.');
-    window.location.href = 'index.html';
-    throw new Error('No QR token found');
-}
-
-const validToken = sessionStorage.getItem('qrSessionToken');
-if (validToken !== token) {
-    alert('Invalid session. Please scan QR code first.');
-    window.location.href = 'index.html';
-    throw new Error('Invalid QR token');
-}
-
-/*
-    (function () {
-      const ua = navigator.userAgent || navigator.vendor || window.opera;
-      const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
-
-      if (!isIOS) {
-        document.body.innerHTML = `
-        <div class="overlay"></div>  
-<div class="content">
-  <div class="access-denied-card">
-    <img src="drawables/ios-logo.png" alt="iOS Logo" class="ios-logo">
-    <h1>Access Denied</h1>
-    <p>This website is only available on iOS devices, if you are using an android please download the app.</p>
-    <button onclick="window.location.href='https://www.apple.com/ios/'" class="learn-more-btn">
-      Learn More About iOS
-    </button>
-  </div>
-</div>
-        `;
-        throw new Error('Non-iOS device detected. Access denied.');
-      }
-    })();
-
-if (!token) {
-    alert('Unauthorized access. Please scan QR code first.');
-    window.location.href = 'scan.html';
-} else {
-    sessionStorage.setItem('qrSessionToken', token); // <-- save token
-} */
-
-function triggerNotification(title, body) {
-    if (Notification.permission === 'granted') {
-        // Try Service Worker first (better for Mobile/PWA)
-        if (navigator.serviceWorker.controller) {
-            navigator.serviceWorker.controller.postMessage({
-                type: 'SHOW_NOTIF', // You might need to handle this in sw.js or just use showNotification directly
-                title: title,
-                body: body
-            });
-            // Direct SW fallback if postMessage isn't set up for this
-            navigator.serviceWorker.ready.then(registration => {
-                registration.showNotification(title, {
-                    body: body,
-                    icon: 'images/icons/icon-192x192.png', // Make sure this path is correct
-                    vibrate: [200, 100, 200]
-                });
-            });
-        } else {
-            // Standard Fallback
-            new Notification(title, {
-                body: body,
-                icon: 'images/icons/icon-192x192.png'
-            });
-        }
+// mark token invalid on SessionsByToken so it cannot be reused
+async function invalidateToken(tok, extra = {}) {
+    if (!tok) return;
+    try {
+        const now = Date.now();
+        await update(ref(db, `SessionsByToken/${tok}`), { invalidated: true, logoutTime: now, ...extra });
+    } catch (e) {
+        console.warn('Failed to invalidate token', e);
     }
 }
 
-function showTopToast(msg, ms = 2200) {
+// UI refs
+const tvCurrentTime = document.getElementById('tvCurrentTime');
+const tvName = document.getElementById('tvStudentName');
+const tvId = document.getElementById('tvStudentID');
+const tvGreeting = document.getElementById('tvGreeting');
+const topToast = document.getElementById('topToast');
+const logoutDialog = document.getElementById('logoutDialog');
+const btnLogoutYes = document.getElementById('btnLogoutYes');
+const btnLogoutNo = document.getElementById('btnLogoutNo');
+const askModal = document.getElementById('askStudentModal');
+const askInput = document.getElementById('askStudentInput');
+const askSave = document.getElementById('askStudentSave');
+const askCancel = document.getElementById('askStudentCancel');
+
+let currentStudentName = '';
+let currentStudentID = '';
+let activeToken = null;
+let _fullTvName = '';
+
+// ----------------- NOTIFICATION STATE -----------------
+let _reminderTimeoutId = null;
+const REMINDER_DELAY_MS = 10 * 1000; // TEST: 10 Seconds (Change to 3 * 60 * 1000 later)
+// ------------------------------------------------------
+
+function showTopToast(msg, ms = 2500) {
+    if (!topToast) return;
     topToast.textContent = msg;
     topToast.style.display = 'block';
     clearTimeout(showTopToast._t);
     showTopToast._t = setTimeout(() => topToast.style.display = 'none', ms);
 }
 
-// Fetch student info
-async function fetchStudentData(number) {
-    if (!number) return null;
-    try {
-        const snap = await get(child(ref(db), `Students/${number}`));
-        if (snap.exists()) return snap.val();
-        return null;
-    } catch (e) { console.error(e); return null; }
+function getFirstName(full) {
+    if (!full) return '';
+    return String(full).trim().split(/\s+/)[0] || '';
 }
 
-async function populateStudentInfo(number) {
-    const data = await fetchStudentData(number);
-    if (!data) {
-        studentName.value = 'Not Found';
-        strandSelect.innerHTML = `<option>Automatic</option>`;
-        gradeSelect.innerHTML = `<option>Automatic</option>`;
-        currentFullStrand = null;
+function setCurrentStudentName(name) {
+    _fullTvName = (name || '').toString();
+    try { localStorage.setItem('studentName', _fullTvName); } catch (e) { /* ignore */ }
+    if (!tvName) return;
+    tvName.style.whiteSpace = 'nowrap';
+    tvName.style.overflow = 'hidden';
+    tvName.style.textOverflow = 'clip';
+    tvName.textContent = getFirstName(_fullTvName) || '';
+}
+
+// ------------------------------------------------------
+// START NOTIFICATION LOGIC
+// ------------------------------------------------------
+async function startPushNotifications() {
+    // 1. Check Basic Support
+    if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
+
+    // 2. Check Permission (Must be 'granted' from previous page)
+    if (Notification.permission !== 'granted') {
+        console.warn('[NOTIF] Permission not granted yet.');
         return;
     }
 
-    studentName.value = data.name || data.fullName || 'Unknown';
-    currentFullStrand = data.strand || null;
+    // 3. Ensure SW is Ready & Controlling
+    try {
+        // Register if needed, or just get existing
+        let reg = await navigator.serviceWorker.getRegistration();
+        if (!reg) {
+            reg = await navigator.serviceWorker.register('/sw.js');
+        }
+        
+        // Force wait for it to be active
+        if (!navigator.serviceWorker.controller) {
+            // If no controller, we can't use SW notifications reliably
+            console.log('[NOTIF] Reloading to activate SW controller...');
+            // A reload fixes the "first visit" issue where SW isn't ready
+            window.location.reload(); 
+            return;
+        }
+    } catch (e) {
+        console.error('[NOTIF] SW Setup Error', e);
+        return;
+    }
 
-    const shortStrand = currentFullStrand
-        ? currentFullStrand.replace(/\s*-\s.*$/, '').trim()
-        : 'Automatic';
+    console.log(`[NOTIF] Timer started. Waiting ${REMINDER_DELAY_MS / 1000} seconds...`);
 
-    strandSelect.innerHTML = '';
-    const opt = document.createElement('option');
-    opt.textContent = shortStrand;
-    opt.value = shortStrand;
-    if (currentFullStrand) opt.dataset.full = currentFullStrand;
-    strandSelect.appendChild(opt);
+    // 4. Start Timer
+    if (_reminderTimeoutId) clearTimeout(_reminderTimeoutId);
+    
+    _reminderTimeoutId = setTimeout(async () => {
+        console.log('[NOTIF] Timer finished. Sending...');
+        
+        try {
+            const reg = await navigator.serviceWorker.ready;
+            
+            // CRITICAL: iOS requires the 'tag' to be unique or it might silence it
+            // Adding a timestamp to the tag ensures it's treated as a "new" event
+            const uniqueTag = 'logout-reminder-' + Date.now();
 
-    gradeSelect.innerHTML = `<option>${data.grade || 'Automatic'}</option>`;
+            await reg.showNotification('LIBRARY REMINDER', {
+                body: 'You have been logged in for 3 minutes. Please LOGOUT before exiting.',
+                icon: 'images/icons/eLib-icon192x192.png',
+                tag: uniqueTag, // Unique tag per notification
+                renotify: true,
+                vibrate: [200, 100, 200],
+                requireInteraction: false 
+            });
+            
+            console.log('[NOTIF] Sent via Service Worker');
+            
+        } catch (e) {
+            console.error('[NOTIF] Failed to send', e);
+            // Last ditch effort: Standard API
+            new Notification('LIBRARY REMINDER', {
+                body: 'Please LOGOUT before exiting the library.'
+            });
+        }
+    }, REMINDER_DELAY_MS);
 }
 
 
-// Sign in anonymously
+function stopPushNotifications() {
+    if (_reminderTimeoutId) {
+        clearTimeout(_reminderTimeoutId);
+        _reminderTimeoutId = null;
+    }
+}
+// ------------------------------------------------------
+
+// Watch for resize
+if (typeof ResizeObserver !== 'undefined') {
+    const ro = new ResizeObserver(() => setCurrentStudentName(_fullTvName));
+    ro.observe(tvName ? (tvName.parentElement || tvName) : document.body);
+} else {
+    window.addEventListener('resize', () => setCurrentStudentName(_fullTvName));
+}
+
+function updateTimeAndGreeting() {
+    const now = new Date();
+    if (tvCurrentTime) tvCurrentTime.textContent = now.toLocaleTimeString();
+    const hr = now.getHours();
+    if (tvGreeting) tvGreeting.textContent = hr < 12 ? 'Good Morning,' : (hr < 18 ? 'Good Afternoon,' : 'Good Evening,');
+}
+updateTimeAndGreeting();
+setInterval(updateTimeAndGreeting, 1000);
+
+const params = new URLSearchParams(window.location.search);
+const token = params.get('token') || null;
+if (token) {
+    localStorage.setItem('activeToken', token);
+    activeToken = token;
+} else {
+    activeToken = localStorage.getItem('activeToken') || null;
+}
+
+function openAskModal() {
+    if (!askModal) return;
+    askModal.style.display = 'flex';
+    askInput.value = '';
+    askInput.focus();
+}
+function closeAskModal() { if (askModal) askModal.style.display = 'none'; }
+
+askSave.addEventListener('click', () => {
+    const v = askInput.value.trim();
+    if (!v) { showTopToast('Enter ID'); return; }
+    localStorage.setItem('studentNum', v);
+    fetchStudentByNumber(v);
+    closeAskModal();
+});
+askCancel.addEventListener('click', () => { closeAskModal(); showTopToast('Student ID required'); });
+
 signInAnonymously(auth).then(() => {
+    showTopToast('Data gathered successfully', 1200);
+    if (activeToken) {
+        loadStudentFromToken(activeToken);
+    } else {
+        const stored = localStorage.getItem('studentNum');
+        if (stored) fetchStudentByNumber(stored);
+        else openAskModal();
+    }
+}).catch(err => {
+    console.error('Auth failed', err);
+    showTopToast('Auth failed: ' + (err && err.message ? err.message : ''));
+});
 
-    studentNumber.addEventListener('input', () => {
-        const v = studentNumber.value.trim();
-        if (v.length === 11) {
-            studentName.value = 'Searching...';
-            populateStudentInfo(v);
-        } else {
-            studentName.value = '';
-            strandSelect.innerHTML = `<option>Automatic</option>`;
-            gradeSelect.innerHTML = `<option>Automatic</option>`;
-            currentFullStrand = null;
+async function loadStudentFromToken(tok) {
+    if (!tok) return;
+    try {
+        const snap = await get(child(ref(db), `SessionsByToken/${tok}`));
+        if (!snap.exists()) {
+            showTopToast('Invalid or expired token');
+            openAskModal();
+            return;
         }
-    });
+        const data = snap.val();
 
-    btnSubmit.addEventListener('click', async () => {
-        const number = studentNumber.value.trim();
-        if (number.length !== 11) {
-            showTopToast('Please enter a valid 11-digit student number.');
+        if (data.invalidated === true || data.logoutTime) {
+            showTopToast('This token has already been used (logged out).');
+            localStorage.removeItem('activeToken');
+            localStorage.removeItem('studentNum');
+            localStorage.removeItem('studentName');
+            localStorage.removeItem('studentID');
+            setTimeout(() => location.replace('index.html'), 850);
             return;
         }
 
-        const name = studentName.value || 'Unknown';
-        const selectedOpt = strandSelect.options[strandSelect.selectedIndex];
-        const selectedOptFull = selectedOpt && selectedOpt.dataset ? selectedOpt.dataset.full : undefined;
-        const fullStrandToSave = currentFullStrand ?? selectedOptFull ?? strandSelect.value ?? 'Automatic';
+        const name = data.name || data.studentName || data.fullName || 'Unknown';
+        const studentNumber = data.studentNumber || data.id || data.studentNum || data.studentID || '';
+        
+        localStorage.setItem('studentNum', studentNumber);
+        localStorage.setItem('studentName', name);
+        localStorage.setItem('studentID', studentNumber);
+        localStorage.setItem('activeToken', tok);
+        currentStudentName = name; currentStudentID = studentNumber; activeToken = tok;
+        setCurrentStudentName(name);
+        tvId.textContent = 'ID: ' + studentNumber;
+        showTopToast('Welcome ' + getFirstName(name) + '!');
 
-        const grade = gradeSelect.value || 'Automatic';
-        const now = Date.now();
-        const dateISO = new Date(now).toISOString().split('T')[0];
+        // CALL NOTIFICATION START
+        startPushNotifications();
 
-        try {
-            // 1) Create session under Students
-            const sessionsRef = ref(db, `Students/${number}/sessions`);
-            const newSessionRef = push(sessionsRef);
-            const sessionData = { studentNumber: number, name, strand: fullStrandToSave, grade, loginTime: now, logoutTime: 0, date: dateISO };
-            await set(newSessionRef, sessionData);
+    } catch (e) {
+        console.error(e);
+        showTopToast('Error fetching session data');
+        openAskModal();
+    }
+}
 
-            // 2) Save SessionsByToken for finishScanActivity.html
-            await set(ref(db, `SessionsByToken/${token}`), {
-                studentNumber: number,
-                name,
-                sessionKey: newSessionRef.key,
-                loginTime: now
-            });
-
-            // 3) Save locally
-            localStorage.setItem('studentNum', number);
-            localStorage.setItem('studentLogKey', newSessionRef.key);
-
-            // --- TRIGGER NOTIFICATION HERE ---
-            triggerNotification("Login Successful", `Welcome, ${name}! Do not forget to log out before leaving the library.`);
-
-            showTopToast('Attendance logged!');
-            setTimeout(() => {
-                window.location.href = `finishScanActivity.html?token=${token}`;
-            }, 800);
-
-        } catch (e) {
-            console.error('Error saving session', e);
-            showTopToast('Error saving session.');
+async function fetchStudentByNumber(studentNum) {
+    if (!studentNum) return;
+    try {
+        const snap = await get(child(ref(db), `Students/${studentNum}`));
+        if (!snap.exists()) {
+            localStorage.setItem('studentNum', studentNum);
+            localStorage.setItem('studentID', studentNum);
+            setCurrentStudentName('Not Found');
+            tvId.textContent = 'ID: ' + studentNum;
+            showTopToast('Student not found in DB, but stored locally');
+            return;
         }
-    });
+        const d = snap.val();
+        const name = d.name || d.fullName || d.displayName || 'Unknown';
+        const id = d.studentNumber || d.studentID || studentNum;
+        currentStudentName = name;
+        currentStudentID = id;
+        localStorage.setItem('studentNum', studentNum);
+        localStorage.setItem('studentName', name);
+        localStorage.setItem('studentID', id);
+        setCurrentStudentName(name);
+        tvId.textContent = 'ID: ' + id;
+        showTopToast('Data loaded successfully');
+    } catch (err) {
+        console.error(err);
+        showTopToast('Error loading student data');
+    }
+}
 
-}).catch(err => showTopToast('Auth failed: ' + err.message));
+function navHome() {
+    const tok = localStorage.getItem('activeToken') || '';
+    if (tok) window.location.href = `finishScanActivity.html?token=${tok}`;
+    else window.location.href = 'finishScanActivity.html';
+}
+window.navHome = navHome;
+function navBlogs() { window.open('https://www.sti.edu/blog1.asp', '_blank'); }
+window.navBlogs = navBlogs;
+function navFeedback() {
+    const studentId = localStorage.getItem('studentID') || localStorage.getItem('studentNum') || '';
+    const tok = localStorage.getItem('activeToken') || '';
+    if (!studentId) { showTopToast('Student session missing. Please scan again.'); return; }
+    const url = `feedback.html?studentId=${encodeURIComponent(studentId)}${tok ? '&token=' + encodeURIComponent(tok) : ''}`;
+    window.location.href = url;
+}
+window.navFeedback = navFeedback;
+function navLogout() {
+    if (!logoutDialog) return;
+    logoutDialog.style.display = 'flex';
+    requestAnimationFrame(() => logoutDialog.classList.add('show'));
+    logoutDialog.setAttribute('aria-hidden', 'false');
+}
+window.navLogout = navLogout;
+
+function hideLogoutDialog(callback) {
+    if (!logoutDialog) { if (callback) callback(); return; }
+    logoutDialog.classList.remove('show');
+    logoutDialog.setAttribute('aria-hidden', 'true');
+    setTimeout(() => {
+        logoutDialog.style.display = 'none';
+        if (callback) callback();
+    }, 260);
+}
+btnLogoutYes.addEventListener('click', () => {
+    hideLogoutDialog(() => performManualLogout());
+});
+btnLogoutNo.addEventListener('click', () => {
+    hideLogoutDialog(() => { });
+});
+
+async function performManualLogout() {
+    const studentNum = localStorage.getItem('studentNum');
+    const name = localStorage.getItem('studentName') || _fullTvName || '';
+    if (!studentNum) {
+        localStorage.removeItem('studentNum'); localStorage.removeItem('studentName'); localStorage.removeItem('studentID');
+        showTopToast('Logged out');
+        setTimeout(() => window.location.href = 'thankyou.html', 700);
+        return;
+    }
+    const now = Date.now();
+    const humanDate = new Date(now).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    try {
+        const sessionsSnap = await get(child(ref(db), `Students/${studentNum}/sessions`));
+        let candidateKey = null;
+        if (sessionsSnap.exists()) {
+            const sessions = sessionsSnap.val();
+            let latestLogin = -1;
+            Object.entries(sessions).forEach(([k, v]) => {
+                if (v && (!v.logoutTime || v.logoutTime === 0)) {
+                    const lt = typeof v.loginTime === 'number' ? v.loginTime : 0;
+                    if (lt >= latestLogin) { latestLogin = lt; candidateKey = k; }
+                }
+            });
+        }
+        if (candidateKey) {
+            const sessionUpdates = { logoutTime: now, date: humanDate, name, studentNumber: studentNum };
+            await update(ref(db, `Students/${studentNum}/sessions/${candidateKey}`), sessionUpdates);
+            await update(ref(db, `StudentLogs/${studentNum}/${candidateKey}`), sessionUpdates).catch(() => { });
+            showTopToast('Logout recorded (session updated)');
+        } else {
+            const newRef = push(ref(db, `StudentLogs/${studentNum}`));
+            const key = newRef.key;
+            const payload = { date: humanDate, grade: '', loginTime: now, logoutTime: now, name, strand: '', studentNumber: studentNum };
+            await set(ref(db, `StudentLogs/${studentNum}/${key}`), payload);
+            await set(ref(db, `Students/${studentNum}/sessions/${key}`), payload);
+            showTopToast('Logout recorded (new session)');
+        }
+    } catch (e) {
+        console.error('Logout write error', e);
+        showTopToast('Failed to record logout to DB');
+    } finally {
+        try {
+            const tok = activeToken || localStorage.getItem('activeToken');
+            await invalidateToken(tok);
+        } catch(e) {
+            console.warn("Token invalidate failed:", e);
+        }
+
+        stopPushNotifications();
+        localStorage.removeItem('studentNum'); localStorage.removeItem('studentName'); localStorage.removeItem('studentID'); localStorage.removeItem('activeToken');
+        setTimeout(() => window.location.href = 'thankyou.html', 900);
+    }
+}
+
+window.openHelp = () => window.open('https://library.sticollegesurigao.com/contact-us/', '_blank');
+window.openLibrary = () => window.open('https://login.ebsco.com/', '_blank');
+window.openELMS = () => window.open('https://elms.sti.edu/', '_blank');
+window.openSite = () => window.open('https://library.sticollegesurigao.com/', '_blank');
+window.openFeedback = () => navFeedback();
+window.onBlogInfo = (i) => { if (i === 1) window.open('https://www.sti.edu/blog1.asp', '_blank'); else showTopToast('Opening blog ' + i); };
