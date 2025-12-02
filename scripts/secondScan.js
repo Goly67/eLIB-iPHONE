@@ -23,6 +23,8 @@ const gradeSelect = document.getElementById('gradeSelect');
 const btnSubmit = document.getElementById('btnSubmit');
 const topToast = document.getElementById('topToast');
 
+let currentFullStrand = null;
+
 // QR token from scan.html
 const urlParams = new URLSearchParams(window.location.search);
 const token = urlParams.get('token');
@@ -47,7 +49,7 @@ const token = urlParams.get('token');
         `;
         throw new Error('Non-iOS device detected. Access denied.');
       }
-    })();  // COMMENT EVERYTHING HERE
+    })();
 
 if (!token) {
     alert('Unauthorized access. Please scan QR code first.');
@@ -79,10 +81,29 @@ async function populateStudentInfo(number) {
         studentName.value = 'Not Found';
         strandSelect.innerHTML = `<option>Automatic</option>`;
         gradeSelect.innerHTML = `<option>Automatic</option>`;
+        currentFullStrand = null;
         return;
     }
+
     studentName.value = data.name || data.fullName || 'Unknown';
-    strandSelect.innerHTML = `<option>${data.strand || 'Automatic'}</option>`;
+
+    // FULL strand from DB (store for saving later)
+    currentFullStrand = data.strand || null;
+
+    // SHORT strand for display: everything before the first " - "
+    // e.g. "ITMAWD - IT in Mobile App and Web Development" -> "ITMAWD"
+    const shortStrand = currentFullStrand
+        ? currentFullStrand.replace(/\s*-\s.*$/, '').trim()
+        : 'Automatic';
+
+    // Create the option so we can store the full strand on dataset.full
+    strandSelect.innerHTML = '';
+    const opt = document.createElement('option');
+    opt.textContent = shortStrand;
+    opt.value = shortStrand;
+    if (currentFullStrand) opt.dataset.full = currentFullStrand;
+    strandSelect.appendChild(opt);
+
     gradeSelect.innerHTML = `<option>${data.grade || 'Automatic'}</option>`;
 }
 
@@ -98,6 +119,7 @@ signInAnonymously(auth).then(() => {
             studentName.value = '';
             strandSelect.innerHTML = `<option>Automatic</option>`;
             gradeSelect.innerHTML = `<option>Automatic</option>`;
+            currentFullStrand = null; // important: clear stale value
         }
     });
 
@@ -109,7 +131,10 @@ signInAnonymously(auth).then(() => {
         }
 
         const name = studentName.value || 'Unknown';
-        const strand = strandSelect.value || 'Automatic';
+        const selectedOpt = strandSelect.options[strandSelect.selectedIndex];
+        const selectedOptFull = selectedOpt && selectedOpt.dataset ? selectedOpt.dataset.full : undefined;
+        const fullStrandToSave = currentFullStrand ?? selectedOptFull ?? strandSelect.value ?? 'Automatic';
+
         const grade = gradeSelect.value || 'Automatic';
         const now = Date.now();
         const dateISO = new Date(now).toISOString().split('T')[0];
@@ -118,7 +143,7 @@ signInAnonymously(auth).then(() => {
             // 1) Create session under Students
             const sessionsRef = ref(db, `Students/${number}/sessions`);
             const newSessionRef = push(sessionsRef);
-            const sessionData = { studentNumber: number, name, strand, grade, loginTime: now, logoutTime: 0, date: dateISO };
+            const sessionData = { studentNumber: number, name, strand: fullStrandToSave, grade, loginTime: now, logoutTime: 0, date: dateISO };
             await set(newSessionRef, sessionData);
 
             // 2) Save SessionsByToken for finishScanActivity.html
@@ -133,7 +158,7 @@ signInAnonymously(auth).then(() => {
             localStorage.setItem('studentNum', number);
             localStorage.setItem('studentLogKey', newSessionRef.key);
 
-            showTopToast('Attendance logged! Redirecting...');
+            showTopToast('Attendance logged!');
             setTimeout(() => {
                 window.location.href = `finishScanActivity.html?token=${token}`;
             }, 800);

@@ -2,9 +2,14 @@
 html, body {
     margin: 0;
     padding: 0;
-    height: 100%;
-    min-height: 100vh;
-    min-height: -webkit-fill-available; /* fixes Safari height bug */
+    height: 100vh;
+    height: -webkit-fill-available;
+    min-height: -webkit-fill-available;
+
+    position: fixed;      /* prevents scroll */
+    overflow: hidden;     /* no scrolling */
+    overscroll-behavior: none;
+    touch-action: none;
     font-family: Arial, sans-serif;
     background: url('/drawables/welcome_banner_lb.jpg') center/cover no-repeat;
     color: white;

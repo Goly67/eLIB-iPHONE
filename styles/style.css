@@ -1,191 +1,249 @@
 /* Global setup */
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      min-height: 100vh;
-      min-height: -webkit-fill-available;
-      font-family: 'Outfit', sans-serif;
-      background: url('/drawables/welcome_banner_lb.jpg') center/cover no-repeat fixed;
-      color: white;
-      position: relative;
-      padding-top: env(safe-area-inset-top);
-      padding-bottom: env(safe-area-inset-bottom);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-    }
+html, body {
+  margin: 0;
+  padding: 0;
 
-    /* FULL overlay */
-    .overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(15, 15, 15, 0.78);
-      z-index: 1;
-    }
+  height: 100vh;
+  height: -webkit-fill-available;
+  min-height: -webkit-fill-available;
 
-    /* Content must be above overlay */
-    .content {
-      position: relative;
-      z-index: 2;
-      width: 100%;
-      max-width: 520px;
-      padding: 20px;
-      box-sizing: border-box;
-    }
+  font-family: 'Outfit', sans-serif;
+  background: url('/drawables/welcome_banner_lb.jpg') center/cover no-repeat fixed;
+  color: white;
 
-    .logo-frame {
-      width: 110px;
-      height: 60px;
-      margin: 0 auto 18px auto;
-      border-radius: 12px;
-      overflow: hidden;
-      background: white;
-    }
+  position: fixed;      /* prevents scroll */
+  overflow: hidden;     /* no scrolling */
+  width: 100%;          
+  max-width: 100%;
+  overscroll-behavior: none;
+  touch-action: none;
 
-    .logo-frame img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
 
-    /* Typography hierarchy using Outfit */
-    .title1 {
-      font-size: 22px;
-      font-weight: 500;
-      margin-bottom: -4px;
-    }
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
 
-    .title2 {
-      font-size: 26px;
-      font-weight: 700;
-      color: orange;
-      margin-bottom: 6px;
-    }
+/* FULL overlay */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 15, 15, 0.78);
+  z-index: 1;
+}
 
-    .subtitle {
-      font-size: 16px;
-      font-weight: 400;
-      padding: 10px 8px;
-      color: #e5e5e5;
-      max-width: 600px;
-      margin: 0 auto;
-    }
+/* Content must be above overlay */
+.content {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 520px;
+  padding: 20px;
+  box-sizing: border-box;
+}
 
-    .subtitle-small {
-      font-size: 15px;
-      font-weight: 300;
-      color: #ddd;
-      margin-bottom: 14px;
-    }
+.logo-frame {
+  width: 110px;
+  height: 60px;
+  margin: 0 auto 18px auto;
+  border-radius: 12px;
+  overflow: hidden;
+  background: white;
+}
 
-    /* Button */
-    #btnScanQR {
-      width: 280px;
-      height: 60px;
-      font-size: 20px;
-      font-weight: 600;
-      background-color: #eb9205ed;
-      border: none;
-      color: white;
-      border-radius: 12px;
-      cursor: pointer;
-      transition: 0.25s ease;
-    }
+.logo-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 
-    #btnScanQR:hover {
-      background-color: #c67a00ed;
-    }
+/* Typography hierarchy using Outfit */
+.title1 {
+  font-size: 22px;
+  font-weight: 500;
+  margin-bottom: -4px;
+}
 
-    .top-toast {
-    position: fixed;
-    top: calc(20px + env(safe-area-inset-top));
-    left: 50%;
-    transform: translateX(-50%);
-    background: #db0000;
-    color: white;
-    padding: 12px 24px;
-    border-radius: 10px;
-    display: none;
-    z-index: 9999;
-    font-size: 14px;
-    font-weight: 500;
+.title2 {
+  font-size: 26px;
+  font-weight: 700;
+  color: orange;
+  margin-bottom: 6px;
+}
 
-    /* prevent multi-line */
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 90%;     
+.subtitle {
+  font-size: 16px;
+  font-weight: 400;
+  padding: 10px 8px;
+  color: #e5e5e5;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.subtitle-small {
+  font-size: 15px;
+  font-weight: 300;
+  color: #ddd;
+  margin-bottom: 14px;
+}
+
+/* Button */
+#btnScanQR {
+  width: 280px;
+  height: 60px;
+  font-size: 20px;
+  font-weight: 600;
+  background-color: #eb9205ed;
+  border: none;
+  color: white;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: 0.25s ease;
+}
+
+#btnScanQR:hover {
+  background-color: #c67a00ed;
+}
+
+.top-toast {
+  position: fixed;
+  top: calc(20px + env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  background: #db0000;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 10px;
+  display: none;
+  z-index: 9999;
+  font-size: 14px;
+  font-weight: 500;
+
+  /* prevent multi-line */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 90%;
 }
 
 .access-denied-card {
-    background: rgba(255, 255, 255, 0.948);
-    padding: 40px 30px;
-    border-radius: 20px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-    text-align: center;
-    max-width: 400px;
-    width: 90%;
-    transition: transform 0.3s ease;
+  background: rgba(255, 255, 255, 0.948);
+  padding: 40px 1px;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  text-align: center;
+  max-width: 400px;
+  width: 90%;
+  margin: 0 auto;          
+  animation: fadeIn 220ms ease both;
+  transform-origin: center;
+  pointer-events: auto;
+  transition: transform 0.3s ease;
+}
+
+/* NEW: Proper centering container */
+.center-wrapper {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;   /* horizontal center */
+  align-items: center;       /* vertical center */
+  z-index: 3;                /* above overlay */
+  pointer-events: none;      /* so overlay click still works if needed */
+}
+
+.access-denied-card:hover {
+  transform: translateY(-5px);
+}
+
+.access-denied-card h1 {
+  font-size: 2rem;
+  margin-bottom: 15px;
+  color: #dc3545;
+}
+
+.access-denied-card p {
+  font-size: 1.1rem;
+  padding: 10px 20px;
+  margin-bottom: 25px;
+  color: #6c757d;
+}
+
+.ios-logo {
+  width: 80px;
+  height: 80px;
+  margin-bottom: 20px;
+}
+
+.learn-more-btn {
+  background-color: #007aff;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 25px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.learn-more-btn:hover {
+  background-color: #005bb5;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
   }
 
-  .access-denied-card:hover {
-    transform: translateY(-5px);
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.left-fixed {
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.version {
+  position: fixed;
+  bottom: calc(10px + env(safe-area-inset-bottom));
+  font-size: 12px;
+  color: #ddd;
+  z-index: 2;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+}
+
+/* Small iPhones */
+@media (max-width: 380px) {
+  .title1 {
+    font-size: 20px;
   }
 
-  .access-denied-card h1 {
-    font-size: 2rem;
-    margin-bottom: 15px;
-    color: #dc3545;
+  .title2 {
+    font-size: 22px;
   }
 
-  .access-denied-card p {
-    font-size: 1.1rem;
-    margin-bottom: 25px;
-    color: #6c757d;
+  .subtitle {
+    font-size: 14px;
+    padding: 8px;
   }
 
-  .ios-logo {
-    width: 80px;
-    height: 80px;
-    margin-bottom: 20px;
+  .subtitle-small {
+    font-size: 14px;
   }
 
-  .learn-more-btn {
-    background-color: #007aff;
-    color: white;
-    border: none;
-    border-radius: 12px;
-    padding: 10px 25px;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
+  #btnScanQR {
+    width: 240px;
+    height: 54px;
+    font-size: 18px;
   }
-
-  .learn-more-btn:hover {
-    background-color: #005bb5;
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; transform: scale(0.95); }
-    to { opacity: 1; transform: scale(1); }
-  }
-
-    .version {
-      position: fixed;
-      bottom: calc(10px + env(safe-area-inset-bottom));
-      font-size: 12px;
-      color: #ddd;
-      z-index: 2;
-    }
-
-    /* Small iPhones */
-    @media (max-width: 380px) {
-      .title1 { font-size: 20px; }
-      .title2 { font-size: 22px; }
-      .subtitle { font-size: 14px; padding: 8px; }
-      .subtitle-small { font-size: 14px; }
-      #btnScanQR { width: 240px; height: 54px; font-size: 18px; }
-    }
+}
