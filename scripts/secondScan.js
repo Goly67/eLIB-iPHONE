@@ -43,7 +43,6 @@ if (validToken !== token) {
     throw new Error('Invalid QR token');
 }
 
-/*
     (function () {
       const ua = navigator.userAgent || navigator.vendor || window.opera;
       const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
@@ -71,7 +70,7 @@ if (!token) {
     window.location.href = 'scan.html';
 } else {
     sessionStorage.setItem('qrSessionToken', token); // <-- save token
-} */
+}
 
 function triggerNotification(title, body) {
     if (Notification.permission === 'granted') {
@@ -209,5 +208,6 @@ signInAnonymously(auth).then(() => {
             showTopToast('Error saving session.');
         }
     });
+
 
 }).catch(err => showTopToast('Auth failed: ' + err.message));
