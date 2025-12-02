@@ -171,6 +171,7 @@ function checkIOSPWA() {
         .ios-share-icon {
           width: 24px;
           height: 24px;
+          color: #fff;
           /* filter: invert(1); <--- Remove this line if your share.png is already white/light */
         }
         .arrow-down {
@@ -198,17 +199,17 @@ function checkIOSPWA() {
           <span>1. Tap</span>
           <!-- UPDATED IMAGE SOURCE -->
           <img src="images/icons/share.png" class="ios-share-icon" alt="Share">
-          <span>below</span>
+          <span>above</span>
         </div>
         
         <div class="step-row">
-          <span>2. Select</span>
+          <span>2. Scroll down and PRESS</span>
           <span style="background:#333; padding:2px 8px; border-radius:6px;">Add to Home Screen</span>
         </div>
 
         <div class="arrow-down">⬇</div>
         
-        <button class="dismiss-btn" id="dismissOverlay">Close (App won't work correctly)</button>
+        <button class="dismiss-btn" id="dismissOverlay">Close warning. (Notifications are important, be aware.)</button>
       </div>
     `;
 
