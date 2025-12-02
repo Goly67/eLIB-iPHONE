@@ -48,7 +48,7 @@ let _fullTvName = '';
 
 // ----------------- NOTIFICATION STATE -----------------
 let _reminderTimeoutId = null;
-const REMINDER_DELAY_MS = 10 * 1000; // TEST: 10 Seconds (Change to 3 * 60 * 1000 later)
+const REMINDER_DELAY_MS = 10 * 3000; // TEST: 10 Seconds (Change to 3 * 60 * 1000 later)
 // ------------------------------------------------------
 
 function showTopToast(msg, ms = 2500) {
@@ -108,7 +108,7 @@ async function startPushNotifications() {
         return;
     }
 
-    console.log(`[NOTIF] Timer started. Waiting ${REMINDER_DELAY_MS / 1000} seconds...`);
+    console.log(`[NOTIF] Timer started. Waiting ${REMINDER_DELAY_MS / 3000} seconds...`);
 
     // 4. Start Timer
     if (_reminderTimeoutId) clearTimeout(_reminderTimeoutId);
@@ -124,7 +124,7 @@ async function startPushNotifications() {
             const uniqueTag = 'logout-reminder-' + Date.now();
 
             await reg.showNotification('LIBRARY REMINDER', {
-                body: 'You have been logged in for 3 minutes. Please LOGOUT before exiting.',
+                body: 'Please LOGOUT before exiting the LIBRARY.',
                 icon: 'images/icons/eLib-icon192x192.png',
                 tag: uniqueTag, // Unique tag per notification
                 renotify: true,
