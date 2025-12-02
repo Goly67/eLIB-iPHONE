@@ -2,8 +2,8 @@ self.addEventListener("install", () => {
   self.skipWaiting();
 });
 
-self.addEventListener("activate", () => {
-  clients.claim();
+self.addEventListener('activate', event => {
+  event.waitUntil(clients.claim());
 });
 
 // Send push notification every time a push message arrives
