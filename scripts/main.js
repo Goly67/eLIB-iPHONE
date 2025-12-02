@@ -1,7 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-app.js";
 import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-auth.js";
 
-
 const firebaseConfig = {
   apiKey: "AIzaSyDsYm9spjswfNVT_VvTprGI0Ystc3iQXQA",
   authDomain: "realtime-database-7e415.firebaseapp.com",
@@ -12,12 +11,10 @@ const firebaseConfig = {
   appId: "1:817516970962:web:13b35185538cd472eebe0b"
 };
 
-
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const btnScan = document.getElementById('btnScanQR');
 const btnNotif = document.getElementById('btnEnableNotif'); 
-
 
 // Register Service Worker for PWA & Notifications
 if ('serviceWorker' in navigator) {
@@ -26,9 +23,7 @@ if ('serviceWorker' in navigator) {
     .catch(err => console.error('SW Fail', err));
 }
 
-
 const topToast = document.getElementById('topToast');
-
 
 function showTopToast(message) {
   topToast.textContent = message;
@@ -36,29 +31,24 @@ function showTopToast(message) {
   setTimeout(() => { topToast.style.display = "none"; }, 2400);
 }
 
-
 async function requestNotificationPermission() {
   if (!("Notification" in window)) {
     showTopToast("Notifications not supported");
     return false;
   }
 
-
   if (Notification.permission === 'denied') {
     showTopToast("⚠️ Notifications blocked. Please enable in browser settings.");
     return false;
   }
-
 
   if (Notification.permission === 'granted') {
     showTopToast("Notifications already active ✅");
     return true;
   }
 
-
   try {
     const perm = await Notification.requestPermission();
-
 
     if (perm === "granted") {
       showTopToast("Notifications enabled! ✅");
@@ -79,7 +69,6 @@ async function requestNotificationPermission() {
   }
 }
 
-
 async function requestCameraAccess() {
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     showTopToast("Camera access not supported.");
@@ -96,8 +85,7 @@ async function requestCameraAccess() {
   }
 }
 
-
-// ---------- iOS PWA Instructions (Centered) ----------
+// ---------- iOS PWA Instructions (Perfectly Centered) ----------
 function checkIOSPWA() {
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
@@ -120,11 +108,10 @@ function checkIOSPWA() {
       z-index: 99999;
       display: flex;
       flex-direction: column;
-      /* CENTER VERTICALLY */
+      /* CENTER VERTICALLY & HORIZONTALLY */
       justify-content: center;
-      /* CENTER HORIZONTALLY */
       align-items: center;
-      padding: 20px;
+      /* REMOVED PADDING HERE TO FIX SHIFT */
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       animation: fadeIn 0.4s ease-out;
     `;
@@ -143,8 +130,11 @@ function checkIOSPWA() {
         .install-card {
           background: #1c1c1e;
           border: 1px solid #333;
-          width: 100%;
-          max-width: 340px; /* Slightly narrower for better centering look */
+          /* FIXED WIDTH LOGIC */
+          width: calc(100% - 40px);
+          max-width: 340px;
+          margin: 0 20px; /* Ensures it pushes away from edges */
+          
           padding: 30px 20px;
           border-radius: 24px;
           text-align: center;
@@ -195,9 +185,6 @@ function checkIOSPWA() {
             display: inline-block;
             font-weight: 600;
         }
-        /* Changed arrow to point DOWN towards the bottom of the screen where the bar usually is */
-        /* But since the card is center, maybe remove arrow or keep it pointing down generally? */
-        /* I'll keep it pointing down but subtle */
         .arrow-down {
           font-size: 32px;
           margin-top: 25px;
@@ -225,7 +212,7 @@ function checkIOSPWA() {
             <div class="step-row">
                 <span>1. Tap Share</span>
                 <img src="images/icons/share.png" class="ios-share-icon" alt="Share">
-                span>on the top right</span>
+                <span>on the top right</span>
             </div>
             
             <!-- Step 2 -->
@@ -253,13 +240,11 @@ function checkIOSPWA() {
 
 // ---------- Main Logic ----------
 
-
 const studentNum = localStorage.getItem('studentNum');
 const studentLogKey = localStorage.getItem('studentLogKey');
 const loginTimestamp = parseInt(localStorage.getItem('loginTimestamp'), 10) || 0;
 const now = Date.now();
 const sessionValid = studentNum && studentLogKey && (now - loginTimestamp < 60 * 60 * 1000);
-
 
 if (sessionValid) {
   window.location.href = "finishScanActivity.html";
@@ -269,14 +254,12 @@ if (sessionValid) {
   localStorage.removeItem('loginTimestamp');
 }
 
-
 signInAnonymously(auth)
   .then(async () => {
     showTopToast("Data successfully gathered.");
     checkIOSPWA(); 
   })
   .catch(() => showTopToast("No internet connection."));
-
 
 if (btnScan) {
   btnScan.addEventListener('click', async () => {
@@ -287,17 +270,14 @@ if (btnScan) {
   });
 }
 
-
 if (btnNotif && Notification.permission === 'granted') {
   btnNotif.style.display = 'none';
 }
-
 
 if (btnNotif) {
   btnNotif.addEventListener('click', async () => {
     console.log("Notification button clicked!"); 
     await requestNotificationPermission();
-
 
     if (Notification.permission === 'granted') {
       btnNotif.style.display = 'none';
