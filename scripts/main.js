@@ -97,19 +97,16 @@ async function requestCameraAccess() {
 }
 
 
-// ---------- iOS PWA Instructions (Fixed Layout) ----------
+// ---------- iOS PWA Instructions (Centered) ----------
 function checkIOSPWA() {
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
 
-
   // Only show if on iOS AND NOT installed (browser tab)
   if (isIOS && !isStandalone) {
 
-
     const overlay = document.createElement('div');
     overlay.id = 'ios-install-overlay';
-
 
     overlay.style.cssText = `
       position: fixed;
@@ -123,20 +120,21 @@ function checkIOSPWA() {
       z-index: 99999;
       display: flex;
       flex-direction: column;
-      justify-content: flex-end;
+      /* CENTER VERTICALLY */
+      justify-content: center;
+      /* CENTER HORIZONTALLY */
       align-items: center;
-      padding-bottom: 40px;
+      padding: 20px;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       animation: fadeIn 0.4s ease-out;
     `;
-
 
     overlay.innerHTML = `
       <style>
         @keyframes bounce {
           0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
-          40% {transform: translateY(-10px);}
-          60% {transform: translateY(-5px);}
+          40% {transform: translateY(10px);}
+          60% {transform: translateY(5px);}
         }
         @keyframes fadeIn {
           from {opacity: 0;}
@@ -144,17 +142,14 @@ function checkIOSPWA() {
         }
         .install-card {
           background: #1c1c1e;
-          border-top: 1px solid #333;
+          border: 1px solid #333;
           width: 100%;
-          /* FIXED WIDTH ISSUE: Added padding and calc width */
-          max-width: 400px;
-          width: calc(100% - 40px); 
-          margin: 0 20px;
+          max-width: 340px; /* Slightly narrower for better centering look */
           padding: 30px 20px;
           border-radius: 24px;
           text-align: center;
           color: white;
-          box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+          box-shadow: 0 20px 40px rgba(0,0,0,0.6);
           box-sizing: border-box;
         }
         .install-title {
@@ -165,10 +160,9 @@ function checkIOSPWA() {
         }
         .install-text {
           font-size: 15px;
-          line-height: 1.4;
+          line-height: 1.5;
           color: #aaa;
           margin-bottom: 25px;
-          padding: 0 10px; /* Prevent text hitting edges */
         }
         .steps-container {
             display: flex;
@@ -189,44 +183,49 @@ function checkIOSPWA() {
         .ios-share-icon {
           width: 24px;
           height: 24px;
-          filter: invert(1); /* Keeps icon white */
+          filter: invert(1); 
         }
         .add-btn-graphic {
             background: #333;
-            padding: 6px 12px;
+            padding: 8px 12px;
             border-radius: 8px;
             font-size: 14px;
             color: #fff;
             border: 1px solid #555;
             display: inline-block;
+            font-weight: 600;
         }
+        /* Changed arrow to point DOWN towards the bottom of the screen where the bar usually is */
+        /* But since the card is center, maybe remove arrow or keep it pointing down generally? */
+        /* I'll keep it pointing down but subtle */
         .arrow-down {
           font-size: 32px;
-          margin-top: 20px;
+          margin-top: 25px;
           animation: bounce 2s infinite;
           color: #0A84FF;
         }
         .dismiss-btn {
-          margin-top: 25px;
+          margin-top: 20px;
           background: transparent;
           border: none;
           color: #666;
           font-size: 13px;
           text-decoration: underline;
           padding: 10px;
+          cursor: pointer;
         }
       </style>
 
-
       <div class="install-card">
         <div class="install-title">Install App Required</div>
-        <div class="install-text">To use the QR Scanner and receive notifications, you must add this app to your home screen.</div>
+        <div class="install-text">To use the scanner and notifications, please add this app to your home screen.</div>
         
         <div class="steps-container">
             <!-- Step 1 -->
             <div class="step-row">
                 <span>1. Tap Share</span>
                 <img src="images/icons/share.png" class="ios-share-icon" alt="Share">
+                span>on the top right</span>
             </div>
             
             <!-- Step 2 -->
@@ -236,16 +235,14 @@ function checkIOSPWA() {
             </div>
         </div>
 
-
         <div class="arrow-down">⬇</div>
+        <div style="font-size:12px; color:#555; margin-top:5px;">(Button is at bottom of browser)</div>
         
-        <button class="dismiss-btn" id="dismissOverlay">I understand, close warning</button>
+        <button class="dismiss-btn" id="dismissOverlay">I dont want notifications, close app</button>
       </div>
     `;
 
-
     document.body.appendChild(overlay);
-
 
     document.getElementById('dismissOverlay').onclick = () => {
       overlay.style.opacity = '0';
@@ -253,7 +250,6 @@ function checkIOSPWA() {
     };
   }
 }
-
 
 // ---------- Main Logic ----------
 
