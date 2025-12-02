@@ -73,6 +73,33 @@ if (!token) {
     sessionStorage.setItem('qrSessionToken', token); // <-- save token
 } */
 
+function triggerNotification(title, body) {
+    if (Notification.permission === 'granted') {
+        // Try Service Worker first (better for Mobile/PWA)
+        if (navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage({
+                type: 'SHOW_NOTIF', // You might need to handle this in sw.js or just use showNotification directly
+                title: title,
+                body: body
+            });
+            // Direct SW fallback if postMessage isn't set up for this
+            navigator.serviceWorker.ready.then(registration => {
+                registration.showNotification(title, {
+                    body: body,
+                    icon: 'images/icons/icon-192x192.png', // Make sure this path is correct
+                    vibrate: [200, 100, 200]
+                });
+            });
+        } else {
+            // Standard Fallback
+            new Notification(title, {
+                body: body,
+                icon: 'images/icons/icon-192x192.png'
+            });
+        }
+    }
+}
+
 function showTopToast(msg, ms = 2200) {
     topToast.textContent = msg;
     topToast.style.display = 'block';
@@ -101,17 +128,12 @@ async function populateStudentInfo(number) {
     }
 
     studentName.value = data.name || data.fullName || 'Unknown';
-
-    // FULL strand from DB (store for saving later)
     currentFullStrand = data.strand || null;
 
-    // SHORT strand for display: everything before the first " - "
-    // e.g. "ITMAWD - IT in Mobile App and Web Development" -> "ITMAWD"
     const shortStrand = currentFullStrand
         ? currentFullStrand.replace(/\s*-\s.*$/, '').trim()
         : 'Automatic';
 
-    // Create the option so we can store the full strand on dataset.full
     strandSelect.innerHTML = '';
     const opt = document.createElement('option');
     opt.textContent = shortStrand;
@@ -121,6 +143,7 @@ async function populateStudentInfo(number) {
 
     gradeSelect.innerHTML = `<option>${data.grade || 'Automatic'}</option>`;
 }
+
 
 // Sign in anonymously
 signInAnonymously(auth).then(() => {
@@ -134,7 +157,7 @@ signInAnonymously(auth).then(() => {
             studentName.value = '';
             strandSelect.innerHTML = `<option>Automatic</option>`;
             gradeSelect.innerHTML = `<option>Automatic</option>`;
-            currentFullStrand = null; // important: clear stale value
+            currentFullStrand = null;
         }
     });
 
@@ -172,6 +195,9 @@ signInAnonymously(auth).then(() => {
             // 3) Save locally
             localStorage.setItem('studentNum', number);
             localStorage.setItem('studentLogKey', newSessionRef.key);
+
+            // --- TRIGGER NOTIFICATION HERE ---
+            triggerNotification("Login Successful", `Welcome, ${name}! Don't forget to logout later.`);
 
             showTopToast('Attendance logged!');
             setTimeout(() => {
