@@ -263,21 +263,18 @@ if (token) {
     activeToken = localStorage.getItem('activeToken') || null;
 }
 
-function openAskModal() {
-    if (!askModal) return;
-    askModal.style.display = 'flex';
-    askInput.value = '';
-    askInput.focus();
-}
-
 signInAnonymously(auth).then(() => {
     showTopToast('Data gathered successfully', 1200);
     if (activeToken) {
         loadStudentFromToken(activeToken);
     } else {
         const stored = localStorage.getItem('studentNum');
-        if (stored) fetchStudentByNumber(stored);
-        else openAskModal();
+        if (stored) {
+            fetchStudentByNumber(stored);
+        } else {
+            showTopToast('No active session. Please scan first.');
+            setTimeout(() => location.replace('index.html'), 900);
+        }
     }
 }).catch(err => {
     console.error('Auth failed', err);
@@ -290,7 +287,6 @@ async function loadStudentFromToken(tok) {
         const snap = await get(child(ref(db), `SessionsByToken/${tok}`));
         if (!snap.exists()) {
             showTopToast('Invalid or expired token');
-            openAskModal();
             return;
         }
         const data = snap.val();
@@ -323,7 +319,6 @@ async function loadStudentFromToken(tok) {
     } catch (e) {
         console.error(e);
         showTopToast('Error fetching session data');
-        openAskModal();
     }
 }
 
