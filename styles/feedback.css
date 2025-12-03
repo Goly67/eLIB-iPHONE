@@ -7,15 +7,30 @@
 }
 
 html, body {
-    width: 100%;
-    height: 100%;
-    -webkit-text-size-adjust: 100%;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    background: #F9F9F9;
-    color: #111827;
-    overflow-x: hidden;
+  width: 100%;
+  /* remove or comment out height:100% if present to avoid iOS fixed-position issues */
+  min-height: 100%;
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: #F9F9F9;
+  color: #111827;
+  overflow-x: hidden;
 }
+
+/* Reserve space at page bottom equal to nav + safe area so content won't be hidden */
+body::after {
+  content: "";
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(70px + env(safe-area-inset-bottom, 0)); /* nav height + safe area */
+  background: transparent;
+  z-index: 49;
+  pointer-events: none;
+}
+
 
 /* Prevent iOS auto-zoom when focusing inputs */
 input, textarea, button, select {
@@ -24,16 +39,12 @@ input, textarea, button, select {
     appearance: none;
 }
 
-/* Spacer for Bottom Nav */
-body::after {
-    content: "";
-    position: fixed;
-    left: 0; right: 0; bottom: 0;
-    height: env(safe-area-inset-bottom, 0);
-    background: #fff;
-    z-index: 49;
-    pointer-events: none;
-}
+ /* push page content below the fixed header (includes safe-area) */
+ #scrollContainer,
+ .container {
+     padding-left: calc(16px + env(safe-area-inset-left));
+     padding-right: calc(16px + env(safe-area-inset-right));
+ }
 
 /* ===== LAYOUT CONTAINERS ===== */
 #scrollContainer {
@@ -45,7 +56,7 @@ body::after {
     padding-bottom: 88px;
     max-width: 1200px;
     margin: 0 auto;
-    padding-top: calc(40px + 12px + 12px + env(safe-area-inset-top, 0));
+    padding-top: calc(40px + 12px + 12px + env(safe-area-inset-top, 0)); 
 }
 
 /* ===== BANNER CARD ===== */ 
@@ -314,23 +325,25 @@ textarea {
 #btnLogoutNo { background: #9B0000; }
 
 /* bottom nav */
- #bottomNav {
-     /* keep other properties you already have */
-     position: fixed;
-     left: 0;
-     right: 0;
-     bottom: env(safe-area-inset-bottom, 0);
+#bottomNav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0; /* flush to viewport bottom */
+  height: 70px; /* visible bar height (icons sit above the safe area) */
+  padding-bottom: env(safe-area-inset-bottom, 0); /* internal cushion for home indicator */
+  box-sizing: border-box;
 
-     height: 70px;
-     /* keep your desired height */
-     background: #fff;
-     display: flex;
-     justify-content: space-around;
-     align-items: center;
-     box-shadow: 0 -1px 6px rgba(0, 0, 0, 0.06);
-     z-index: 50;
-     /* must be higher than the body::after spacer */
- }
+  background: #fff;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  box-shadow: 0 -1px 6px rgba(0, 0, 0, 0.06);
+  z-index: 2000; /* above content */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
 
  /* keep buttons spacing/tap area as before */
  #bottomNav button {

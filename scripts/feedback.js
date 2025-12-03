@@ -28,11 +28,11 @@ const notifBadge = document.getElementById('notifBadge');
 const clearNotifsBtn = document.getElementById('clearNotifs');
 
 // Toggle Dropdown
-if(notifBtn) {
+if (notifBtn) {
     notifBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         notifDropdown.classList.toggle('show');
-        if(notifDropdown.classList.contains('show')) updateBadge(false);
+        if (notifDropdown.classList.contains('show')) updateBadge(false);
     });
 }
 
@@ -46,7 +46,7 @@ document.addEventListener('click', (e) => {
 });
 
 // Clear Notifications
-if(clearNotifsBtn) {
+if (clearNotifsBtn) {
     clearNotifsBtn.addEventListener('click', () => {
         notifications = [];
         renderNotifications();
@@ -56,7 +56,7 @@ if(clearNotifsBtn) {
 function addInAppNotification(title, body) {
     const now = new Date();
     const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    
+
     notifications.unshift({ title, body, time: timeStr });
     renderNotifications();
     updateBadge(true);
@@ -105,7 +105,7 @@ async function startPushNotifications() {
     try {
         let reg = await navigator.serviceWorker.getRegistration();
         if (!reg) reg = await navigator.serviceWorker.register('/sw.js');
-        
+
         console.log('[NOTIF] Timer started.');
 
         if (_reminderTimeoutId) clearTimeout(_reminderTimeoutId);
@@ -219,10 +219,10 @@ function updateGreetingAndTime() {
     const now = new Date();
     const hr = now.getHours();
     const greeting = hr < 12 ? 'Good Morning' : (hr < 18 ? 'Good Afternoon' : 'Good Evening');
-    
+
     if (tvGreeting) tvGreeting.textContent = greeting + ',';
     if (tvCurrentTime) tvCurrentTime.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    
+
     const full = localStorage.getItem('studentName') || currentStudentName || '';
     showFirstNameOnly(full);
 }
@@ -249,7 +249,7 @@ signInAnonymously(auth).then(async () => {
                 localStorage.removeItem('studentNum');
                 localStorage.removeItem('studentName');
                 localStorage.removeItem('studentID');
-            } catch(e) { }
+            } catch (e) { }
             setTimeout(() => location.replace('index.html'), 900);
             return;
         }
@@ -273,6 +273,22 @@ signInAnonymously(auth).then(async () => {
     console.error(err);
     showTopToast('Auth failed: ' + (err && err.message ? err.message : ''));
 });
+
+// 1) Confirm bottomNav parent
+console.log('bottomNav parent:', document.querySelector('#bottomNav').parentElement);
+
+// 2) Find nearest ancestor that uses transform/filter/will-change/perspective
+let el = document.querySelector('#bottomNav');
+while (el) {
+    const s = getComputedStyle(el);
+    if (s.transform !== 'none' || s.filter !== 'none' || /will-change/.test(s.willChange) || s.perspective !== 'none') {
+        console.warn('Transform/filter/will-change/perspective found on:', el, s.transform, s.filter, s.willChange, s.perspective);
+        break;
+    }
+    el = el.parentElement;
+}
+if (!el) console.log('No transform/filter/will-change/perspective found up the tree.');
+
 
 async function loadStudentInfo(studentId) {
     try {
@@ -409,7 +425,7 @@ btnLogoutYes.addEventListener('click', async () => {
                 if (tok) {
                     await update(ref(db, `SessionsByToken/${tok}`), { invalidated: true, logoutTime: now });
                 }
-            } catch(e) {
+            } catch (e) {
                 console.warn('Token invalidate failed:', e);
             }
 
