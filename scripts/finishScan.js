@@ -46,10 +46,6 @@ const topToast = document.getElementById('topToast');
 const logoutDialog = document.getElementById('logoutDialog');
 const btnLogoutYes = document.getElementById('btnLogoutYes');
 const btnLogoutNo = document.getElementById('btnLogoutNo');
-const askModal = document.getElementById('askStudentModal');
-const askInput = document.getElementById('askStudentInput');
-const askSave = document.getElementById('askStudentSave');
-const askCancel = document.getElementById('askStudentCancel');
 // ----------------- UI NOTIFICATION SYSTEM -----------------
 const notifBtn = document.getElementById('notifBtn');
 const notifDropdown = document.getElementById('notifDropdown');
