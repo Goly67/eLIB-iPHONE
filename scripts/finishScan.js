@@ -266,20 +266,27 @@ if (token) {
 signInAnonymously(auth).then(() => {
     showTopToast('Data gathered successfully', 1200);
     if (activeToken) {
+        // If there's a token, load the student data
         loadStudentFromToken(activeToken);
     } else {
+        // If there's NO token, check for a locally stored ID
         const stored = localStorage.getItem('studentNum');
         if (stored) {
+            // If there's a stored ID, use it
             fetchStudentByNumber(stored);
         } else {
             showTopToast('No active session. Please scan first.');
-            setTimeout(() => location.replace('/index.html'), 900);
+            setTimeout(() => {
+                // Use a relative path, NOT an absolute one
+                location.replace('index.html'); 
+            }, 900); // Delay so user can see the message
         }
     }
 }).catch(err => {
     console.error('Auth failed', err);
     showTopToast('Auth failed: ' + (err && err.message ? err.message : ''));
 });
+
 
 async function loadStudentFromToken(tok) {
     if (!tok) return;
