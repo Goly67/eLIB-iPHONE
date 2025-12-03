@@ -255,27 +255,59 @@ updateTimeAndGreeting();
 setInterval(updateTimeAndGreeting, 5000);
 
 const params = new URLSearchParams(window.location.search);
-const token = params.get('token') || null;
-if (token) {
-    localStorage.setItem('activeToken', token);
-    activeToken = token;
+const urlToken = params.get('token') || null;
+const urlStudentId = params.get('studentId') || null;
+
+// Store token if it exists in URL
+if (urlToken) {
+    localStorage.setItem('activeToken', urlToken);
+    activeToken = urlToken;
 } else {
     activeToken = localStorage.getItem('activeToken') || null;
 }
 
+async function isTokenValid(tok) {
+    if (!tok) return true;
+    try {
+        const snap = await get(ref(db, `SessionsByToken/${tok}`));
+        if (!snap.exists()) {
+            console.log('Token not found:', tok);
+            return false;
+        }
+
+        const data = snap.val();
+        console.debug('SessionsByToken entry for', tok, data);
+
+        if (data && data.invalidated === true) {
+            console.log('Token explicitly invalidated:', tok);
+            return false;
+        }
+
+        if (data && typeof data.logoutTime === 'number' && data.logoutTime > 0) {
+            console.log('Token has logoutTime > 0 (used):', tok, data.logoutTime);
+            return false;
+        }
+
+        return true;
+    } catch (err) {
+        console.error('Token validation failed', err);
+        return false;
+    }
+}
+
 signInAnonymously(auth).then(async () => {
+    showTopToast('Data gathered successfully', 1200);
+    
     const tokenToCheck = urlToken || localStorage.getItem('activeToken') || null;
 
     if (tokenToCheck) {
         const ok = await isTokenValid(tokenToCheck);
         if (!ok) {
             showTopToast('This session token has already been used or expired.');
-            try {
-                localStorage.removeItem('activeToken');
-                localStorage.removeItem('studentNum');
-                localStorage.removeItem('studentName');
-                localStorage.removeItem('studentID');
-            } catch(e) { }
+            localStorage.removeItem('activeToken');
+            localStorage.removeItem('studentNum');
+            localStorage.removeItem('studentName');
+            localStorage.removeItem('studentID');
             setTimeout(() => location.replace('index.html'), 900);
             return;
         }
@@ -287,10 +319,9 @@ signInAnonymously(auth).then(async () => {
     const finalStudentId = urlStudentId || storedStudentId;
 
     if (finalStudentId) {
-        loadStudentInfo(finalStudentId);
+        await loadStudentInfo(finalStudentId);
         startPushNotifications();
     } else {
-        // =================== THIS IS THE FIX ===================
         showTopToast('No active session found. Redirecting...');
         
         localStorage.removeItem('activeToken');
@@ -298,7 +329,6 @@ signInAnonymously(auth).then(async () => {
         localStorage.removeItem('studentName');
         localStorage.removeItem('studentID');
 
-        // Redirect to the main page, NOT to itself.
         setTimeout(() => {
             window.location.href = 'index.html'; 
         }, 900);
@@ -308,6 +338,37 @@ signInAnonymously(auth).then(async () => {
     console.error(err);
     showTopToast('Auth failed: ' + (err && err.message ? err.message : ''));
 });
+
+async function loadStudentInfo(studentId) {
+    try {
+        const snap = await get(ref(db, `Students/${studentId}`));
+        if (snap.exists()) {
+            const d = snap.val();
+            const name = (d.name || d.fullName || localStorage.getItem('studentName') || '').trim();
+            const id = d.studentNumber || d.studentID || studentId;
+
+            currentStudentName = name || '';
+            currentStudentID = id || '';
+
+            setCurrentStudentName(currentStudentName || 'Unknown');
+            tvId.textContent = 'ID: ' + (currentStudentID || '');
+
+            localStorage.setItem('studentNum', studentId);
+            localStorage.setItem('studentID', currentStudentID);
+            localStorage.setItem('studentName', currentStudentName);
+        } else {
+            const storedFull = localStorage.getItem('studentName') || 'Unknown';
+            setCurrentStudentName(storedFull);
+            tvId.textContent = 'ID: ' + (studentId || '');
+            currentStudentName = storedFull;
+            currentStudentID = studentId || '';
+            showTopToast('Student record not found; using provided ID');
+        }
+    } catch (err) {
+        console.error(err);
+        showTopToast('Error fetching student info');
+    }
+}
 
 async function loadStudentFromToken(tok) {
     if (!tok) return;
