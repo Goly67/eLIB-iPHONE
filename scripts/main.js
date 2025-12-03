@@ -15,6 +15,8 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const btnScan = document.getElementById('btnScanQR');
 const btnNotif = document.getElementById('btnEnableNotif'); 
+const urlParams = new URLSearchParams(window.location.search);
+const token = urlParams.get('token');
 
 // Register Service Worker for PWA & Notifications
 if ('serviceWorker' in navigator) {
@@ -311,4 +313,5 @@ if (btnNotif) {
     }
   });
 }
+
 
