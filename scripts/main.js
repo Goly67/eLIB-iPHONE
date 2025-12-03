@@ -11,6 +11,16 @@ const firebaseConfig = {
   appId: "1:817516970962:web:13b35185538cd472eebe0b"
 };
 
+// Add this script to enable the top header blur on scroll
+window.addEventListener('scroll', function() {
+    const topHeader = document.getElementById('topHeader');
+    if (window.scrollY > 20) {
+        topHeader.classList.add('scrolled');
+    } else {
+        topHeader.classList.remove('scrolled');
+    }
+});
+
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const btnScan = document.getElementById('btnScanQR');
@@ -18,33 +28,11 @@ const btnNotif = document.getElementById('btnEnableNotif');
 
 // Register Service Worker for PWA & Notifications
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('scripts/sw.js')
+  navigator.serviceWorker.register('/sw.js')
     .then(reg => console.log('SW Registered', reg))
     .catch(err => console.error('SW Fail', err));
 }
 
-    (function () {
-      const ua = navigator.userAgent || navigator.vendor || window.opera;
-      const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
-
-      if (!isIOS) {
-        document.body.innerHTML = `
-        <div class="overlay"></div>  
-<div class="content">
-  <div class="access-denied-card">
-    <img src="drawables/ios-logo.png" alt="iOS Logo" class="ios-logo">
-    <h1>Access Denied</h1>
-    <p>This website is only available on iOS devices, if you are using an android please download the app.</p>
-    <button onclick="window.location.href='https://www.apple.com/ios/'" class="learn-more-btn">
-      Learn More About iOS
-    </button>
-  </div>
-</div>
-        `;
-        throw new Error('Non-iOS device detected. Access denied.');
-      }
-    })();
-  
 const topToast = document.getElementById('topToast');
 
 function showTopToast(message) {
@@ -304,6 +292,3 @@ if (btnNotif) {
     }
   });
 }
-
-
-
