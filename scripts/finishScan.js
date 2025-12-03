@@ -252,8 +252,10 @@ function updateTimeAndGreeting() {
     const now = new Date();
     if (tvCurrentTime) tvCurrentTime.textContent = now.toLocaleTimeString();
     const hr = now.getHours();
-    if (tvGreeting) tvGreeting.textContent = hr < 12 ? 'Good Morning,' : (hr < 18 ? 'Good Afternoon,' : 'Good Evening,');
+    const greeting = hr < 12 ? 'Good Morning' : (hr < 18 ? 'Good Afternoon' : 'Good Evening');
+    if (tvGreeting) tvGreeting.textContent = greeting + ',';
 }
+
 updateTimeAndGreeting();
 setInterval(updateTimeAndGreeting, 5000);
 
