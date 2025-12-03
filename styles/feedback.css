@@ -37,6 +37,10 @@ body::after {
 
 /* ===== LAYOUT CONTAINERS ===== */
 #scrollContainer {
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  box-sizing: border-box;
     padding: 16px;
     padding-bottom: 88px;
     max-width: 1200px;
@@ -315,7 +319,7 @@ textarea {
      position: fixed;
      left: 0;
      right: 0;
-     bottom: 0;
+     bottom: env(safe-area-inset-bottom, 0);
 
      height: 70px;
      /* keep your desired height */
