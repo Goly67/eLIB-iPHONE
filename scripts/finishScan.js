@@ -269,16 +269,6 @@ function openAskModal() {
     askInput.value = '';
     askInput.focus();
 }
-function closeAskModal() { if (askModal) askModal.style.display = 'none'; }
-
-askSave.addEventListener('click', () => {
-    const v = askInput.value.trim();
-    if (!v) { showTopToast('Enter ID'); return; }
-    localStorage.setItem('studentNum', v);
-    fetchStudentByNumber(v);
-    closeAskModal();
-});
-askCancel.addEventListener('click', () => { closeAskModal(); showTopToast('Student ID required'); });
 
 signInAnonymously(auth).then(() => {
     showTopToast('Data gathered successfully', 1200);
