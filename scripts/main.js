@@ -25,6 +25,7 @@ if ('serviceWorker' in navigator) {
 
 const topToast = document.getElementById('topToast');
 
+/*
     (function () {
       const ua = navigator.userAgent || navigator.vendor || window.opera;
       const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
@@ -37,8 +38,8 @@ const topToast = document.getElementById('topToast');
     <img src="drawables/ios-logo.png" alt="iOS Logo" class="ios-logo">
     <h1>Access Denied</h1>
     <p>This website is only available on iOS devices, if you are using an android please download the app.</p>
-    <button onclick="window.location.href='https://www.apple.com/ios/'" class="learn-more-btn">
-      Learn More About iOS
+    <button onclick="window.location.href='https://drive.google.com/file/d/1-s7C-sT7DG4JWK43bP3EOt52arkGgdwL/view?usp=sharing'" class="learn-more-btn">
+      Download the android app
     </button>
   </div>
 </div>
@@ -52,7 +53,7 @@ if (!token) {
     window.location.href = 'scan.html';
 } else {
     sessionStorage.setItem('qrSessionToken', token); // <-- save token
-} 
+} */
 
 function showTopToast(message) {
   topToast.textContent = message;
@@ -311,4 +312,3 @@ if (btnNotif) {
     }
   });
 }
-
