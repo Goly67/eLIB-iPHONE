@@ -22,7 +22,7 @@ window.addEventListener('scroll', function() {
     }
 });
 
-
+const tvCurrentTime = document.getElementById('tvCurrentTime');
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
@@ -39,7 +39,6 @@ async function invalidateToken(tok, extra = {}) {
 }
 
 // UI refs
-const tvCurrentTime = document.getElementById('tvCurrentTime');
 const tvName = document.getElementById('tvStudentName');
 const tvId = document.getElementById('tvStudentID');
 const tvGreeting = document.getElementById('tvGreeting');
@@ -250,10 +249,10 @@ if (typeof ResizeObserver !== 'undefined') {
 
 function updateTimeAndGreeting() {
     const now = new Date();
-    if (tvCurrentTime) tvCurrentTime.textContent = now.toLocaleTimeString();
     const hr = now.getHours();
     const greeting = hr < 12 ? 'Good Morning' : (hr < 18 ? 'Good Afternoon' : 'Good Evening');
     if (tvGreeting) tvGreeting.textContent = greeting + ',';
+    if (tvCurrentTime) tvCurrentTime.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
 updateTimeAndGreeting();

@@ -115,13 +115,20 @@ body::after {
      min-width: 70px;
  }
 
- /* greeting + name row */
- #greetingRow {
-     display: flex;
-     gap: 8px;
-     align-items: baseline;
-     width: 100%;
- }
+#greetingRow {
+    display: flex;
+    gap: 4px;  /* ← Add this to create the gap explicitly */
+    align-items: baseline;
+    width: 100%;
+    font-size: 0;  /* ← Kill whitespace between inline elements */
+}
+
+#greetingRow span {
+    font-size: 19px;  /* ← Reset font size for spans */
+    font-weight: 600;
+    color: #1E40AF;
+}
+
 
  /* greeting text */
  #tvGreeting {
