@@ -15,8 +15,6 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const btnScan = document.getElementById('btnScanQR');
 const btnNotif = document.getElementById('btnEnableNotif'); 
-const urlParams = new URLSearchParams(window.location.search);
-const token = urlParams.get('token');
 
 // Register Service Worker for PWA & Notifications
 if ('serviceWorker' in navigator) {
@@ -46,13 +44,6 @@ if ('serviceWorker' in navigator) {
         throw new Error('Non-iOS device detected. Access denied.');
       }
     })();
-
-if (!token) {
-    alert('Unauthorized access. Please scan QR code first.');
-    window.location.href = 'scan.html';
-} else {
-    sessionStorage.setItem('qrSessionToken', token); // <-- save token
-} 
   
 const topToast = document.getElementById('topToast');
 
@@ -313,5 +304,6 @@ if (btnNotif) {
     }
   });
 }
+
 
 
