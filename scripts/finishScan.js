@@ -273,7 +273,7 @@ signInAnonymously(auth).then(() => {
             fetchStudentByNumber(stored);
         } else {
             showTopToast('No active session. Please scan first.');
-            setTimeout(() => location.replace('index.html'), 900);
+            setTimeout(() => location.replace('/index.html'), 900);
         }
     }
 }).catch(err => {
