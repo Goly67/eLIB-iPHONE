@@ -6,6 +6,10 @@
     font-family: "Outfit", system-ui, Arial, sans-serif;
 }
 
+:root {
+  --app-bar-visible: 64px;
+}
+
 html, body {
   width: 100%;
   /* remove or comment out height:100% if present to avoid iOS fixed-position issues */
@@ -25,12 +29,11 @@ body::after {
   left: 0;
   right: 0;
   bottom: 0;
-  height: calc(70px + env(safe-area-inset-bottom, 0)); /* nav height + safe area */
+  height: calc(var(--app-bar-visible) + env(safe-area-inset-bottom, 0));
   background: transparent;
   z-index: 49;
   pointer-events: none;
 }
-
 
 /* Prevent iOS auto-zoom when focusing inputs */
 input, textarea, button, select {
@@ -330,41 +333,46 @@ textarea {
   left: 0;
   right: 0;
   bottom: 0; /* flush to viewport bottom */
-  height: 70px; /* visible bar height (icons sit above the safe area) */
-  padding-bottom: env(safe-area-inset-bottom, 0); /* internal cushion for home indicator */
+  height: calc(var(--app-bar-visible) + env(safe-area-inset-bottom, 0)); /* visible area + safe area */
+  padding-bottom: env(safe-area-inset-bottom, 0); /* push inner content up above home indicator */
   box-sizing: border-box;
 
+  /* visuals */
   background: #fff;
   display: flex;
   justify-content: space-around;
-  align-items: center;
+  align-items: center; /* keeps inner elements vertically centered inside nav's visible area */
   box-shadow: 0 -1px 6px rgba(0, 0, 0, 0.06);
-  z-index: 2000; /* above content */
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
+  z-index: 2000;
 }
 
 
  /* keep buttons spacing/tap area as before */
- #bottomNav button {
-     background: none;
-     border: none;
-     display: flex;
-     flex: 1; 
-    justify-content: center;
-     flex-direction: column;
-     align-items: center;
-     gap: 4px;
-     color: #1E40AF;
-     cursor: pointer;
-     padding: 6px;
- }
+#bottomNav button {
+  background: none;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center; /* <-- ensures icon + label centered vertically */
+  gap: 6px;
+  color: #1E40AF;
+  cursor: pointer;
+  padding: 0 9px;
+  height: var(--app-bar-visible); /* button occupies the visible portion (not the safe area) */
+  box-sizing: border-box;
+}
 
- #bottomNav button img {
-     width: 22px;
-     height: 22px;
-     object-fit: contain;
- }
+#bottomNav button img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+#bottomNav button div { /* the label container inside the button */
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+}
  
 /* Toast */
 #topToast {
