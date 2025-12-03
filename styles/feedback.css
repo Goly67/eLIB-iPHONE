@@ -1,476 +1,339 @@
- /* Embedded CSS (keeps your design) */
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: "Outfit", system-ui, Arial, sans-serif;
-        }
-
-        html,
-        body {
-            width: 100%;
-            height: 100%;
-            -webkit-text-size-adjust: 100%;
-            /* prevent iOS text auto-zoom */
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-            background: #F9F9F9;
-            color: #111827;
-            font-family: "Outfit", system-ui, Arial, sans-serif;
-            overflow-x: hidden;
-        }
-
-        /* Prevent iOS auto-zoom when focusing inputs */
-        input,
-        textarea,
-        button,
-        select {
-            font-size: 16px !important;
-            -webkit-appearance: none;
-            appearance: none;
-        }
-
-        /* ===== LAYOUT CONTAINER ===== */
-        .container {
-            width: 100%;
-            max-width: 480px;
-            /* covers all iPhones up to large Pro Max */
-            margin: 0 auto;
-            padding: 16px;
-            padding-bottom: calc(88px + env(safe-area-inset-bottom));
-            /* space for bottom nav + notch */
-        }
-
-        /* make container respect left/right safe areas on iPhone */
-        .container {
-            padding-left: calc(16px + env(safe-area-inset-left));
-            padding-right: calc(16px + env(safe-area-inset-right));
-        }
-
-        /* ===== TOP LOGO ===== */
-
-        .topLogo {
-            width: 100%;
-            display: flex;
-            justify-content: flex-start;
-            /* align to the left like the inputs */
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 12px;
-            /* no extra left margin or padding so it lines up with .container's padding */
-        }
-
-        .topLogo img {
-            width: 17%;
-            /* small size */
-            max-width: 21%;
-            /* keeps it responsive on narrower phones */
-            height: auto;
-            border-radius: 10px;
-            /* rounded corner to match inputs */
-            object-fit: contain;
-            box-shadow: 0 2px 6px rgba(16, 24, 40, 0.06);
-            display: block;
-        }
-
-
-        /* ===== USER INFO CARD ===== */
-        #userInfo {
-            display: flex;
-            flex-direction: row;
-            justify-content: space-between;
-            align-items: center;
-            background: #fff;
-            padding: 14px 16px;
-            margin-bottom: 16px;
-            border-radius: 12px;
-            box-shadow: 0 1px 6px rgba(16, 24, 40, 0.06);
-            gap: 12px;
-            width: 100%;
-        }
-
-        /* fallback block for columns inside */
-        #userInfo>div {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            min-width: 0;
-        }
-
-        /* Greeting & name */
-        #greetingRow {
-            display: flex;
-
-            align-items: center;
-            flex-wrap: nowrap;
-            /* IMPORTANT: prevent wrapping */
-            white-space: nowrap;
-            /* do not allow line breaks */
-            overflow: hidden;
-            /* clip if it doesn't fit */
-            width: 100%;
-        }
-
-        #tvGreeting {
-            flex: 0 0 auto;
-            margin-right: 6px;
-            /* spacing after comma (no trailing space in text) */
-            font-size: clamp(14px, 3.8vw, 20px);
-            font-weight: 700;
-            color: #1E40AF;
-            white-space: nowrap;
-        }
-
-
-        /* Student ID smaller */
-        #tvStudentID {
-            font-size: clamp(12px, 3.4vw, 14px);
-            color: #6B7280;
-        }
-
-        /* Time (only time will be inserted by JS) */
-        #tvCurrentTime {
-            font-size: clamp(12px, 3.6vw, 14px);
-            color: #374151;
-            text-align: right;
-            white-space: nowrap;
-        }
-
-        /* ensure name truncation if too long */
-        #tvStudentName {
-            flex: 1 1 auto;
-            /* grow/shrink to fit remaining space */
-            min-width: 0;
-            /* allow shrinking inside flex container */
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            /* show ... when too long */
-            font-size: clamp(16px, 4.4vw, 20px);
-            font-weight: 700;
-            color: #1E40AF;
-        }
-
-        /* ===== BANNER ===== */
-        .bannerCard {
-            width: 100%;
-            height: 120px;
-            border-radius: 12px;
-            overflow: hidden;
-            margin-bottom: 16px;
-            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.08);
-        }
-
-        .bannerCard img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-        }
-
-        /* ===== FEEDBACK FORM CARD ===== */
-        .card {
-            background: #fff;
-            padding: 16px;
-            border-radius: 12px;
-            box-shadow: 0 1px 6px rgba(16, 24, 40, 0.06);
-            margin-bottom: 16px;
-        }
-
-        h2 {
-            margin: 0 0 8px 0;
-            color: #1E40AF;
-            font-size: 20px;
-        }
-
-        .label {
-            font-size: 13px;
-            color: #6B7280;
-            margin-top: 8px;
-            display: block;
-        }
-
-        /* inputs */
-        .input,
-        textarea {
-            width: 100%;
-            padding: 12px;
-            border-radius: 10px;
-            border: 1px solid rgba(15, 23, 42, 0.06);
-            box-sizing: border-box;
-            font-family: inherit;
-            font-size: 15px;
-            margin-top: 8px;
-            background: #fff;
-            color: #111827;
-        }
-
-        textarea {
-            min-height: 120px;
-            resize: vertical;
-        }
-
-        /* primary button */
-        .button {
-            display: inline-block;
-            width: 100%;
-            padding: 12px;
-            border-radius: 12px;
-            border: none;
-            font-weight: 700;
-            cursor: pointer;
-            background: #0B5FFF;
-            color: #fff;
-            margin-top: 12px;
-            text-align: center;
-        }
-
-        /* ===== LOGOUT DIALOG ===== */
-        /* --- logout dialog styles & transitions --- */
-        #logoutDialog {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.4);
-            justify-content: center;
-            align-items: center;
-            z-index: 999;
-            opacity: 0;
-            transition: opacity .25s ease
-        }
-
-        #logoutContent {
-            background: #fff;
-            padding: 20px;
-            border-radius: 12px;
-            width: 320px;
-            max-width: 92%;
-            text-align: center;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
-            transform: translateY(6px);
-            transition: transform .25s ease, opacity .2s ease
-        }
-
-        #logoutDialog.show {
-            display: flex;
-            opacity: 1
-        }
-
-        #logoutDialog.show #logoutContent {
-            transform: translateY(0);
-            opacity: 1
-        }
-
-        .dlgBtns {
-            display: flex;
-            gap: 12px;
-            margin-top: 12px;
-            justify-content: center
-        }
-
-        .dlgBtns button {
-            flex: 1;
-            padding: 10px;
-            border-radius: 8px;
-            border: none;
-            color: #fff;
-            font-weight: 700;
-            cursor: pointer
-        }
-
-        #btnLogoutYes {
-            background: #125B02
-        }
-
-        #btnLogoutNo {
-            background: #9B0000
-        }
-
-        /* bottom nav */
-        #bottomNav {
-            position: fixed;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            height: 60px;
-            background: #fff;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            box-shadow: 0 -1px 6px rgba(0, 0, 0, 0.06);
-            z-index: 50
-        }
-
-        #bottomNav button {
-            background: none;
-            border: none;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
-            color: #1E40AF;
-            cursor: pointer
-        }
-
-        #bottomNav button img {
-            width: 22px;
-            height: 22px;
-            object-fit: contain;
-        }
-
-        /* make nav buttons larger on tall devices */
-        @media (min-height: 800px) {
-            #bottomNav button {
-                padding: 10px 8px;
-            }
-
-            #bottomNav img {
-                width: 24px;
-                height: 24px;
-            }
-        }
-
-        /* ===== TOP TOAST ===== */
-        #topToast {
-            display: none;
-            position: fixed;
-            top: 18px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #1E40AF;
-            color: white;
-            padding: 10px 18px;
-            border-radius: 8px;
-            z-index: 2000;
-            font-weight: 700;
-        }
-
-        /* ===== RESPONSIVE RULES FOR iPHONES ===== */
-        /* iPhone SE (320px wide) and similar small phones */
-        @media (max-width: 340px) {
-            .container {
-                padding: 12px;
-                padding-bottom: calc(96px + env(safe-area-inset-bottom));
-            }
-
-            #tvStudentName {
-                font-size: 16px;
-                max-width: 150px;
-            }
-
-            #tvGreeting {
-                font-size: 15px;
-            }
-
-            #tvCurrentTime {
-                font-size: 13px;
-            }
-
-            .topLogo img {
-                width: 110px;
-            }
-
-            .bannerCard {
-                height: 100px;
-            }
-
-            h2 {
-                font-size: 18px;
-            }
-        }
-
-        /* Small / regular iPhones (375px wide: iPhone 6/7/8/SE2/12 mini) */
-        @media (min-width: 341px) and (max-width: 390px) {
-            .container {
-                padding: 14px;
-                padding-bottom: calc(92px + env(safe-area-inset-bottom));
-            }
-
-            #tvStudentName {
-                font-size: 17px;
-                max-width: 180px;
-            }
-
-            #tvGreeting {
-                font-size: 17px;
-            }
-
-            #tvCurrentTime {
-                font-size: 14px;
-            }
-
-            .topLogo img {
-                width: 120px;
-            }
-        }
-
-        /* Larger phones (414px wide: iPhone 12/13/14/15 Pro Max range) */
-        @media (min-width: 391px) and (max-width: 480px) {
-            .container {
-                padding: 16px;
-                padding-bottom: calc(88px + env(safe-area-inset-bottom));
-            }
-
-            #tvStudentName {
-                font-size: 20px;
-                max-width: 240px;
-            }
-
-            #tvGreeting {
-                font-size: 20px;
-            }
-
-            #tvCurrentTime {
-                font-size: 14px;
-            }
-
-            .topLogo img {
-                width: 140px;
-            }
-        }
-
-        /* Landscape / very wide devices */
-        @media (min-width: 481px) {
-            .container {
-                max-width: 720px;
-                padding: 20px;
-            }
-
-            #userInfo {
-                padding: 18px 20px;
-            }
-
-            #tvStudentName {
-                font-size: 22px;
-            }
-
-            #tvCurrentTime {
-                font-size: 16px;
-            }
-        }
-
-        /* ===== STACK USER INFO ON VERY NARROW VIEWPORTS ===== */
-        @media (max-width: 360px) {
-            #userInfo {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 10px;
-            }
-
-            #userInfo>div:last-child {
-                align-self: stretch;
-                text-align: right;
-                width: 100%;
-            }
-        }
-
-        /* keep inputs legible on iOS (no zoom) */
-        input[type="text"],
-        textarea {
-            -webkit-font-smoothing: antialiased;
-        }
-
-        /* small helpers */
-        .hidden {
-            display: none !important;
-        }
+/* Base Reset & Font */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: "Outfit", system-ui, Arial, sans-serif;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    -webkit-text-size-adjust: 100%;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background: #F9F9F9;
+    color: #111827;
+    overflow-x: hidden;
+}
+
+/* Prevent iOS auto-zoom when focusing inputs */
+input, textarea, button, select {
+    font-size: 16px !important;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+/* Spacer for Bottom Nav */
+body::after {
+    content: "";
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    height: env(safe-area-inset-bottom, 0);
+    background: #fff;
+    z-index: 49;
+    pointer-events: none;
+}
+
+/* ===== LAYOUT CONTAINERS ===== */
+#scrollContainer {
+    padding: 16px;
+    padding-bottom: 88px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding-top: calc(40px + 12px + 12px + env(safe-area-inset-top, 0));
+}
+
+/* ===== BANNER CARD ===== */ 
+ .bannerCard {
+     width: 100%;
+     height: 140px;
+     border-radius: 12px;
+     overflow: hidden;
+     margin-bottom: 16px;
+     box-shadow: 0 3px 6px rgba(0, 0, 0, 0.08);
+ }
+
+ .bannerCard img {
+     width: 100%;
+     height: 100%;
+     object-fit: cover;
+     display: block;
+ }
+
+ /* Icons row */
+ #iconsRow {
+     display: flex;
+     gap: 12px;
+     justify-content: space-between;
+     margin-bottom: 20px;
+ }
+
+ .iconBlock {
+     flex: 1;
+     display: flex;
+     flex-direction: column;
+     align-items: center;
+ }
+
+ .iconBtn {
+     width: 48px;
+     height: 48px;
+     border-radius: 50%;
+     border: none;
+     display: inline-flex;
+     align-items: center;
+     justify-content: center;
+     background: #EAF6FF;
+     cursor: pointer;
+     transition: transform .12s ease, box-shadow .12s ease;
+     color: #1E40AF;
+ }
+
+ .iconBtn img {
+     width: 22px;
+     height: 22px;
+ }
+
+ .iconLabel {
+     margin-top: 6px;
+     font-size: 14px;
+     color: #374151;
+     text-align: center;
+ }
+
+/* ===== TOP HEADER (FIXED, NO MARGINS) ===== */
+#topHeader {
+    display: flex;
+    position: fixed;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+    background: #fff;
+    border-radius: 0 0 16px 16px;
+    padding-top: calc(12px + env(safe-area-inset-top, 0));
+    padding-right: 16px;
+    padding-bottom: 12px;
+    padding-left: 16px;
+    top: 0; left: 0; right: 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.21);
+    z-index: 999;
+}
+
+/* Logo Sizing */
+#appLogo {
+    max-height: 40px;
+    max-width: 150px;
+    object-fit: contain;
+    border-radius: 8px;
+}
+
+/* ===== NOTIFICATION SYSTEM (RIGHT SIDE) ===== */
+.notif-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+}
+
+#notifBtn {
+    width: 40px; height: 40px;
+    background: transparent;
+    border: none;
+    color: #1E40AF;
+    cursor: pointer;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background 0.2s;
+}
+#notifBtn:active { background: #eff6ff; }
+
+/* Badge */
+.notif-badge {
+    position: absolute;
+    top: 4px; right: 4px;
+    background: #ef4444;
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    height: 16px; min-width: 16px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0 4px;
+    border: 2px solid #fff;
+}
+
+/* Dropdown (Right Aligned) */
+.notif-dropdown {
+    display: none;
+    position: absolute;
+    top: 50px;
+    right: 0;
+    width: 280px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    border: 1px solid #f3f4f6;
+    z-index: 2000;
+    overflow: hidden;
+    flex-direction: column;
+}
+.notif-dropdown.show { display: flex; }
+
+.notif-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f3f4f6;
+    display: flex; justify-content: space-between; align-items: center;
+    font-weight: 700; font-size: 14px; background: #f9fafb;
+}
+#clearNotifs {
+    font-size: 12px; color: #1E40AF; border: none; background: none; cursor: pointer;
+}
+
+.notif-list { max-height: 300px; overflow-y: auto; }
+
+.notif-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f3f4f6;
+    transition: background 0.2s;
+}
+.notif-item:hover { background: #f9fafb; }
+
+.notif-title { font-size: 14px; font-weight: 600; color: #111827; margin-bottom: 2px; }
+.notif-body { font-size: 13px; color: #6b7280; line-height: 1.4; }
+.notif-time { font-size: 11px; color: #9ca3af; margin-top: 4px; display: block; }
+.empty-notif { padding: 20px; text-align: center; color: #9ca3af; font-size: 14px; }
+
+/* ===== USER INFO CARD ===== */
+#userInfo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #fff;
+    padding: 14px 16px;
+    margin-top: 13px; margin-bottom: 16px;
+    border-radius: 12px;
+    box-shadow: 0 1px 6px rgba(16, 24, 40, 0.06);
+    gap: 12px; width: 100%;
+}
+
+/* Text Styles */
+#tvGreeting { font-size: 19px; font-weight: 600; color: #1E40AF; }
+#tvStudentName { font-size: 18px; font-weight: 700; color: #1E40AF; overflow: hidden; text-overflow: ellipsis; }
+#tvStudentID { font-size: 14px; color: #6B7280; margin-top: 2px; }
+#tvCurrentTime { font-size: 14px; color: #374151; font-weight: 600; text-align: right; }
+
+/* ===== FEEDBACK FORM CARD ===== */
+.card {
+    background: #fff;
+    padding: 16px;
+    border-radius: 12px;
+    box-shadow: 0 1px 6px rgba(16, 24, 40, 0.06);
+    margin-bottom: 16px;
+}
+
+h2 {
+    margin: 0 0 8px 0;
+    color: #1E40AF;
+    font-size: 20px;
+}
+
+.label {
+    font-size: 13px;
+    color: #6B7280;
+    margin-top: 8px;
+    display: block;
+}
+
+/* inputs */
+.input, textarea {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    box-sizing: border-box;
+    font-family: inherit;
+    font-size: 15px;
+    margin-top: 8px;
+    background: #fff;
+    color: #111827;
+}
+
+textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+/* primary button */
+.button {
+    display: inline-block;
+    width: 100%;
+    padding: 12px;
+    border-radius: 12px;
+    border: none;
+    font-weight: 700;
+    cursor: pointer;
+    background: #0B5FFF;
+    color: #fff;
+    margin-top: 12px;
+    text-align: center;
+}
+
+/* ===== LOGOUT DIALOG ===== */
+#logoutDialog {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    justify-content: center;
+    align-items: center;
+    z-index: 3000;
+}
+
+#logoutDialog.show { display: flex; }
+
+#logoutContent {
+    background: #fff;
+    padding: 20px;
+    border-radius: 12px;
+    width: 320px;
+    text-align: center;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+}
+
+.dlgBtns { display: flex; gap: 12px; margin-top: 12px; }
+.dlgBtns button { flex: 1; padding: 10px; border-radius: 8px; border: none; color: #fff; font-weight: 700; cursor: pointer; }
+#btnLogoutYes { background: #125B02; }
+#btnLogoutNo { background: #9B0000; }
+
+/* Bottom Nav */
+#bottomNav {
+    position: fixed; left: 0; right: 0; bottom: env(safe-area-inset-bottom, 0);
+    height: 70px; background: #fff;
+    display: flex; justify-content: space-around; align-items: center;
+    box-shadow: 0 -1px 6px rgba(0, 0, 0, 0.06);
+    z-index: 50;
+}
+#bottomNav button {
+    background: none; border: none;
+    display: flex; flex-direction: column; align-items: center;
+    gap: 4px; color: #1E40AF; cursor: pointer; padding: 6px;
+}
+#bottomNav img { width: 22px; height: 22px; }
+
+/* Toast */
+#topToast {
+    display: none; position: fixed; top: 18px; left: 50%;
+    transform: translateX(-50%);
+    background: #1E40AF; color: white; padding: 10px 18px;
+    border-radius: 8px; z-index: 2000; font-weight: 700;
+}
+
+/* Responsiveness */
+@media (max-width: 360px) {
+    #userInfo { flex-direction: column; align-items: flex-start; }
+    #tvCurrentTime { text-align: left; }
+}

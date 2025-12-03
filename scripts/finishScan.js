@@ -12,6 +12,17 @@ const firebaseConfig = {
     appId: "1:817516970962:web:13b35185538cd472eebe0b"
 };
 
+// Add this script to enable the top header blur on scroll
+window.addEventListener('scroll', function() {
+    const topHeader = document.getElementById('topHeader');
+    if (window.scrollY > 20) {
+        topHeader.classList.add('scrolled');
+    } else {
+        topHeader.classList.remove('scrolled');
+    }
+});
+
+
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
@@ -40,6 +51,80 @@ const askModal = document.getElementById('askStudentModal');
 const askInput = document.getElementById('askStudentInput');
 const askSave = document.getElementById('askStudentSave');
 const askCancel = document.getElementById('askStudentCancel');
+// ----------------- UI NOTIFICATION SYSTEM -----------------
+const notifBtn = document.getElementById('notifBtn');
+const notifDropdown = document.getElementById('notifDropdown');
+const notifList = document.getElementById('notifList');
+const notifBadge = document.getElementById('notifBadge');
+const clearNotifsBtn = document.getElementById('clearNotifs');
+
+let notifications = [];
+
+if(notifBtn){
+    notifBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        notifDropdown.classList.toggle('show');
+        // Hide badge when opened
+        if(notifDropdown.classList.contains('show')) {
+            updateBadge(false);
+        }
+    });
+}
+
+document.addEventListener('click', (e) => {
+    if (notifDropdown && notifDropdown.classList.contains('show')) {
+        if (!notifDropdown.contains(e.target) && !notifBtn.contains(e.target)) {
+            notifDropdown.classList.remove('show');
+        }
+    }
+});
+
+if(clearNotifsBtn) {
+    clearNotifsBtn.addEventListener('click', () => {
+        notifications = [];
+        renderNotifications();
+    });
+}
+
+function addInAppNotification(title, body) {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    
+    notifications.unshift({ title, body, time: timeStr });
+    renderNotifications();
+    updateBadge(true);
+}
+
+function renderNotifications() {
+    if (!notifList) return;
+    notifList.innerHTML = '';
+
+    if (notifications.length === 0) {
+        notifList.innerHTML = '<div class="empty-notif">No new notifications</div>';
+        return;
+    }
+
+    notifications.forEach(n => {
+        const item = document.createElement('div');
+        item.className = 'notif-item';
+        item.innerHTML = `
+            <div class="notif-title">${n.title}</div>
+            <div class="notif-body">${n.body}</div>
+            <span class="notif-time">${n.time}</span>
+        `;
+        notifList.appendChild(item);
+    });
+}
+
+function updateBadge(show) {
+    if (!notifBadge) return;
+    if (show) {
+        notifBadge.textContent = notifications.length;
+        notifBadge.style.display = 'flex';
+    } else {
+        notifBadge.style.display = 'none';
+    }
+}
 
 let currentStudentName = '';
 let currentStudentID = '';
@@ -48,7 +133,7 @@ let _fullTvName = '';
 
 // ----------------- NOTIFICATION STATE -----------------
 let _reminderTimeoutId = null;
-const REMINDER_DELAY_MS = 10 * 3000; // TEST: 10 Seconds (Change to 3 * 60 * 1000 later)
+const REMINDER_DELAY_MS = 5000;
 // ------------------------------------------------------
 
 function showTopToast(msg, ms = 2500) {
@@ -108,13 +193,15 @@ async function startPushNotifications() {
         return;
     }
 
-    console.log(`[NOTIF] Timer started. Waiting ${REMINDER_DELAY_MS / 3000} seconds...`);
+    console.log(`[NOTIF] Timer started. Waiting ${REMINDER_DELAY_MS / 5000} seconds...`);
 
     // 4. Start Timer
     if (_reminderTimeoutId) clearTimeout(_reminderTimeoutId);
     
     _reminderTimeoutId = setTimeout(async () => {
         console.log('[NOTIF] Timer finished. Sending...');
+
+        addInAppNotification('LIBRARY REMINDER', 'Please LOGOUT before exiting the LIBRARY.');
         
         try {
             const reg = await navigator.serviceWorker.ready;
@@ -168,7 +255,7 @@ function updateTimeAndGreeting() {
     if (tvGreeting) tvGreeting.textContent = hr < 12 ? 'Good Morning,' : (hr < 18 ? 'Good Afternoon,' : 'Good Evening,');
 }
 updateTimeAndGreeting();
-setInterval(updateTimeAndGreeting, 1000);
+setInterval(updateTimeAndGreeting, 5000);
 
 const params = new URLSearchParams(window.location.search);
 const token = params.get('token') || null;

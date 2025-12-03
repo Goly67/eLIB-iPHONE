@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <link rel="icon" type="image/x-icon" href="drawables/eLib-icon.png" />
     <title>Feedback</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -11,46 +11,109 @@
 </head>
 
 <body>
-    <div class="container">
 
-        <div class="topLogo">
-            <img src="drawables/logo2.png" alt="STI Logo">
+    <!-- TOP HEADER (FIXED, NO MARGINS) -->
+    <div id="topHeader">
+        <!-- Logo on Left -->
+        <img id="appLogo" src="drawables/logo2.png" alt="App Logo">
+
+        <!-- Notification System on Right -->
+        <div class="notif-wrapper">
+            <button id="notifBtn" class="iconBtn" aria-label="Notifications">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                </svg>
+                <span id="notifBadge" class="notif-badge" style="display: none;">0</span>
+            </button>
+
+            <!-- Dropdown List -->
+            <div id="notifDropdown" class="notif-dropdown">
+                <div class="notif-header">
+                    <span>Notifications</span>
+                    <button id="clearNotifs">Clear</button>
+                </div>
+                <div id="notifList" class="notif-list">
+                    <div class="empty-notif">No new notifications</div>
+                </div>
+            </div>
         </div>
+    </div>
 
+    <!-- MAIN SCROLL CONTAINER (HAS MARGINS/PADDING) -->
+    <div id="scrollContainer">
 
-        <!-- User Info (balanced like finishScanActivity) -->
+        <!-- User Info Card -->
         <div id="userInfo">
             <div>
-                <div id="greetingRow"><span id="tvGreeting">Hi,</span><span id="tvStudentName">Loading...</span></div>
+                <div id="greetingRow">
+                    <span id="tvGreeting">Hi,</span>
+                    <span id="tvStudentName">Student Name</span>
+                </div>
                 <div id="tvStudentID">ID: N/A</div>
             </div>
-
-            <div id="tvCurrentTime">00:00:00</div>
+            <div>
+                <div id="tvCurrentTime">00:00:00</div>
+            </div>
         </div>
 
-        <!-- Optional banner (keeps visual rhythm) -->
         <div class="bannerCard" aria-hidden="true">
             <img src="drawables/welcome_banner_lb.jpg" alt="banner">
         </div>
 
-        <!-- Feedback form card -->
-        <div class="card" role="region" aria-labelledby="feedbackHeading">
-            <h2 id="feedbackHeading">How can we help you?</h2>
+        <!-- Icons Row -->
+        <div id="iconsRow">
+            <div class="iconBlock">
+                <button class="iconBtn" onclick="openHelp()" aria-label="Help">
+                    <img src="drawables/help.svg" alt="">
+                </button>
+                <div class="iconLabel" style="font-weight:500;">Help</div>
+            </div>
+            <div class="iconBlock">
+                <button class="iconBtn" onclick="openLibrary()" aria-label="EBSCOhost">
+                    <img src="drawables/books.svg" alt="">
+                </button>
+                <div class="iconLabel" style="font-weight:500;">EBSCOhost</div>
+            </div>
+            <div class="iconBlock">
+                <button class="iconBtn" onclick="openELMS()" aria-label="eLMS">
+                    <img src="drawables/elms.svg" alt="">
+                </button>
+                <div class="iconLabel" style="font-weight:500;">eLMS</div>
+            </div>
+            <div class="iconBlock">
+                <button class="iconBtn" onclick="openSite()" aria-label="Site">
+                    <img src="drawables/site.svg" alt="">
+                </button>
+                <div class="iconLabel" style="font-weight:500;">Site</div>
+            </div>
+            <div class="iconBlock">
+                <button class="iconBtn" onclick="openFeedback()" aria-label="Feedback">
+                    <img src="drawables/feedback.svg" alt="">
+                </button>
+                <div class="iconLabel" style="font-weight:500;">Feedback</div>
+            </div>
+        </div>
 
-            <label class="label" for="etStudentNumber">Student Number</label>
-            <input id="etStudentNumber" class="input" type="text" disabled aria-disabled="true" />
+        <!-- Feedback Form -->
+        <div class="card">
+            <h2>Send Feedback</h2>
+            <label class="label">Student ID</label>
+            <input id="etStudentNumber" class="input" placeholder="Student ID" readonly>
 
-            <label class="label" for="etSubject">Subject</label>
-            <input id="etSubject" class="input" type="text" placeholder="Subject" />
+            <label class="label">Subject</label>
+            <input id="etSubject" class="input" placeholder="Feedback subject">
 
-            <label class="label" for="etDescription">Description</label>
-            <textarea id="etDescription" class="input" placeholder="Describe your feedback..."></textarea>
+            <label class="label">Description</label>
+            <textarea id="etDescription" class="input" placeholder="Your feedback here..."></textarea>
 
             <button id="btnSubmitFeedback" class="button">Submit Feedback</button>
         </div>
-    </div>
 
-    <!-- logout dialog -->
+    </div> <!-- End Scroll Container -->
+
+    <!-- Logout Dialog -->
     <div id="logoutDialog" role="dialog" aria-hidden="true">
         <div id="logoutContent" role="document">
             <div style="font-weight:700;font-size:18px;padding-bottom:12px">Are you sure you want to log out?</div>
@@ -60,19 +123,32 @@
             </div>
         </div>
     </div>
-    <!-- bottom nav using drawables -->
+
+    <!-- Bottom Nav (Fixed, No Margins) -->
     <div id="bottomNav" role="navigation" aria-label="Bottom navigation">
-        <button onclick="navHome()" title="Home"><img src="drawables/home.svg" alt=""><span style="font-size:12px; font-weight:600;">Home</span></button>
-        <button onclick="navBlogs()" title="Blogs"><img src="drawables/blogs.svg" alt=""><span style="font-size:12px; font-weight:600;">Blogs</span></button>
-        <button onclick="navFeedback()" title="Feedback"><img src="drawables/feedback.svg"
-                alt=""><span style="font-size:12px; font-weight:600;">Feedback</span></button>
-        <button onclick="navLogout()" title="Logout"><img src="drawables/logout.svg" alt=""><span style="font-size:12px; font-weight:600;">Logout</span></button>
+        <button onclick="navHome()" title="Home">
+            <img src="drawables/home.svg" alt="">
+            <div style="font-size:12px; font-weight:600;">Home</div>
+        </button>
+        <button onclick="navBlogs()" title="Blogs">
+            <img src="drawables/blogs.svg" alt="">
+            <div style="font-size:12px; font-weight:600;">Blogs</div>
+        </button>
+        <button onclick="navFeedback()" title="Feedback">
+            <img src="drawables/feedback.svg" alt="">
+            <div style="font-size:12px; font-weight:600;">Feedback</div>
+        </button>
+        <button onclick="navLogout()" title="Logout">
+            <img src="drawables/logout.svg" alt="">
+            <div style="font-size:12px; font-weight:600;">Logout</div>
+        </button>
     </div>
 
+    <!-- Top Toast -->
     <div id="topToast" role="status" aria-live="polite"></div>
 
+    <!-- Scripts -->
     <script type="module" defer src="scripts/feedback.js"></script>
-
 </body>
 
 </html>

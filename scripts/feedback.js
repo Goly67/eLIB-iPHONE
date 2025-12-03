@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
-import { getDatabase, ref, get, push, set } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-database.js";
+import { getDatabase, ref, get, push, set, update } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-database.js";
 import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -11,51 +11,173 @@ const firebaseConfig = {
     messagingSenderId: "817516970962",
     appId: "1:817516970962:web:13b35185538cd472eebe0b"
 };
+
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
 
-// verify token is still valid (not invalidated and not logged-out)
-async function isTokenValid(tok) {
-  if (!tok) return true; // no token -> allowed for local flows
-  try {
-    // use ref(...) directly instead of child(ref(...), ...)
-    const snap = await get(ref(db, `SessionsByToken/${tok}`));
-    if (!snap.exists()) {
-      console.log('Token not found:', tok);
-      return false;
-    }
-    const data = snap.val();
+// ============ NOTIFICATION SYSTEM ============
+let _reminderTimeoutId = null;
+const REMINDER_DELAY_MS = 5000;
+let notifications = [];
 
-    // DEBUG: print the remote node once so you can inspect it in console
-    console.debug('SessionsByToken entry for', tok, data);
+const notifBtn = document.getElementById('notifBtn');
+const notifDropdown = document.getElementById('notifDropdown');
+const notifList = document.getElementById('notifList');
+const notifBadge = document.getElementById('notifBadge');
+const clearNotifsBtn = document.getElementById('clearNotifs');
 
-    if (data && data.invalidated === true) {
-      console.log('Token explicitly invalidated:', tok);
-      return false;
-    }
-
-    if (data && typeof data.logoutTime === 'number' && data.logoutTime > 0) {
-      console.log('Token has logoutTime > 0 (used):', tok, data.logoutTime);
-      return false;
-    }
-
-    return true;
-  } catch (err) {
-    console.error('Token validation failed', err);
-    // conservative fallback: treat as invalid to avoid accidental leaks
-    return false;
-  }
+// Toggle Dropdown
+if(notifBtn) {
+    notifBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        notifDropdown.classList.toggle('show');
+        if(notifDropdown.classList.contains('show')) updateBadge(false);
+    });
 }
 
+// Close Dropdown on outside click
+document.addEventListener('click', (e) => {
+    if (notifDropdown && notifDropdown.classList.contains('show')) {
+        if (!notifDropdown.contains(e.target) && !notifBtn.contains(e.target)) {
+            notifDropdown.classList.remove('show');
+        }
+    }
+});
 
-// UI refs
+// Clear Notifications
+if(clearNotifsBtn) {
+    clearNotifsBtn.addEventListener('click', () => {
+        notifications = [];
+        renderNotifications();
+    });
+}
+
+function addInAppNotification(title, body) {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    
+    notifications.unshift({ title, body, time: timeStr });
+    renderNotifications();
+    updateBadge(true);
+}
+
+function renderNotifications() {
+    if (!notifList) return;
+    notifList.innerHTML = '';
+
+    if (notifications.length === 0) {
+        notifList.innerHTML = '<div class="empty-notif">No new notifications</div>';
+        return;
+    }
+
+    notifications.forEach(n => {
+        const item = document.createElement('div');
+        item.className = 'notif-item';
+        item.innerHTML = `
+            <div class="notif-title">${n.title}</div>
+            <div class="notif-body">${n.body}</div>
+            <span class="notif-time">${n.time}</span>
+        `;
+        notifList.appendChild(item);
+    });
+}
+
+function updateBadge(show) {
+    if (!notifBadge) return;
+    if (show) {
+        notifBadge.textContent = notifications.length;
+        notifBadge.style.display = 'flex';
+    } else {
+        notifBadge.style.display = 'none';
+    }
+}
+
+// Start Push Notifications Timer
+async function startPushNotifications() {
+    if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
+
+    if (Notification.permission !== 'granted') {
+        console.warn('[NOTIF] Permission not granted yet.');
+        return;
+    }
+
+    try {
+        let reg = await navigator.serviceWorker.getRegistration();
+        if (!reg) reg = await navigator.serviceWorker.register('/sw.js');
+        
+        console.log('[NOTIF] Timer started.');
+
+        if (_reminderTimeoutId) clearTimeout(_reminderTimeoutId);
+
+        _reminderTimeoutId = setTimeout(async () => {
+            // 1. Add to UI notification list
+            addInAppNotification('LIBRARY REMINDER', 'Please LOGOUT before exiting the LIBRARY.');
+
+            // 2. Send system push notification
+            try {
+                const r = await navigator.serviceWorker.ready;
+                const uniqueTag = 'logout-reminder-' + Date.now();
+                await r.showNotification('LIBRARY REMINDER', {
+                    body: 'Please LOGOUT before exiting the LIBRARY.',
+                    icon: 'drawables/eLib-icon.png',
+                    tag: uniqueTag,
+                    renotify: true,
+                    vibrate: [200, 100, 200]
+                });
+            } catch (e) {
+                console.error('[NOTIF] Failed to send system push', e);
+                new Notification('LIBRARY REMINDER', { body: 'Please LOGOUT before exiting.' });
+            }
+        }, REMINDER_DELAY_MS);
+
+    } catch (e) {
+        console.error('[NOTIF] Error setting up', e);
+    }
+}
+
+function stopPushNotifications() {
+    if (_reminderTimeoutId) {
+        clearTimeout(_reminderTimeoutId);
+        _reminderTimeoutId = null;
+    }
+}
+
+// ============ VERIFY TOKEN ============
+async function isTokenValid(tok) {
+    if (!tok) return true;
+    try {
+        const snap = await get(ref(db, `SessionsByToken/${tok}`));
+        if (!snap.exists()) {
+            console.log('Token not found:', tok);
+            return false;
+        }
+
+        const data = snap.val();
+        console.debug('SessionsByToken entry for', tok, data);
+
+        if (data && data.invalidated === true) {
+            console.log('Token explicitly invalidated:', tok);
+            return false;
+        }
+
+        if (data && typeof data.logoutTime === 'number' && data.logoutTime > 0) {
+            console.log('Token has logoutTime > 0 (used):', tok, data.logoutTime);
+            return false;
+        }
+
+        return true;
+    } catch (err) {
+        console.error('Token validation failed', err);
+        return false;
+    }
+}
+
+// ============ UI REFS ============
 const tvGreeting = document.getElementById('tvGreeting');
 const tvStudentName = document.getElementById('tvStudentName');
 const tvStudentID = document.getElementById('tvStudentID');
 const tvCurrentTime = document.getElementById('tvCurrentTime');
-const greetingRow = document.getElementById('greetingRow');
-
 const etStudentNumber = document.getElementById('etStudentNumber');
 const etSubject = document.getElementById('etSubject');
 const etDescription = document.getElementById('etDescription');
@@ -69,108 +191,87 @@ let currentStudentName = '';
 let currentStudentID = '';
 let activeToken = null;
 
-// small helper: return the first name token
+// ============ HELPERS ============
 function getFirstName(full) {
     if (!full) return '';
     return String(full).trim().split(/\s+/)[0] || '';
 }
 
-// write only first name into tvStudentName and force single-line clipping (no ellipsis)
 function showFirstNameOnly(full) {
     const first = getFirstName(full);
     if (!tvStudentName) return;
-    // ensure single-line display and no ellipsis
     tvStudentName.style.whiteSpace = 'nowrap';
     tvStudentName.style.overflow = 'hidden';
     tvStudentName.style.textOverflow = 'clip';
     tvStudentName.textContent = first || '';
 }
 
-// toast
 function showTopToast(msg, ms = 2200) {
+    if (!topToast) return;
     topToast.textContent = msg;
     topToast.style.display = 'block';
     clearTimeout(showTopToast._t);
     showTopToast._t = setTimeout(() => topToast.style.display = 'none', ms);
 }
 
-// Debounce helper (keeps things snappy on resize)
-function debounce(fn, wait = 120) {
-    let t;
-    return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), wait); };
-}
-
-// Re-apply first-name display on resize (keeps it stable)
-const debouncedReflow = debounce(() => {
-    // re-show using stored full name (localStorage has the canonical full name)
-    const full = localStorage.getItem('studentName') || currentStudentName || '';
-    showFirstNameOnly(full);
-}, 80);
-window.addEventListener('resize', debouncedReflow);
-window.addEventListener('orientationchange', debouncedReflow);
-
-// Update greeting and time (time-only)
+// ============ UPDATE TIME & GREETING ============
 function updateGreetingAndTime() {
     const now = new Date();
     const hr = now.getHours();
     const greeting = hr < 12 ? 'Good Morning' : (hr < 18 ? 'Good Afternoon' : 'Good Evening');
+    
     if (tvGreeting) tvGreeting.textContent = greeting + ',';
-    if (tvCurrentTime) tvCurrentTime.textContent = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-
-    // ensure display uses only the first name
+    if (tvCurrentTime) tvCurrentTime.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    
     const full = localStorage.getItem('studentName') || currentStudentName || '';
     showFirstNameOnly(full);
 }
+
 updateGreetingAndTime();
 setInterval(updateGreetingAndTime, 1000);
 
-// parse incoming params
+// ============ LOAD STUDENT DATA ============
 const params = new URLSearchParams(window.location.search);
 const urlStudentId = params.get('studentId');
 const urlToken = params.get('token');
 
-// Keep storing token in localStorage when present (so other pages can use it)
 if (urlToken) localStorage.setItem('activeToken', urlToken);
 
-// sign-in and then verify token validity
 signInAnonymously(auth).then(async () => {
-  // choose token to validate: prefer URL token if present, else existing localStorage token
-  const tokenToCheck = urlToken || localStorage.getItem('activeToken') || null;
+    const tokenToCheck = urlToken || localStorage.getItem('activeToken') || null;
 
-  if (tokenToCheck) {
-    const ok = await isTokenValid(tokenToCheck);
-    if (!ok) {
-      // token is invalid -> force exit to index (replace history so Back won't go back)
-      showTopToast('This session token has already been used or expired.');
-      // Clear any stored session info (defensive)
-      try {
-        localStorage.removeItem('activeToken');
-        localStorage.removeItem('studentNum');
-        localStorage.removeItem('studentName');
-        localStorage.removeItem('studentID');
-      } catch(e){ /* ignore */ }
-      // brief delay so user can see toast, then replace location
-      setTimeout(() => location.replace('index.html'), 900);
-      return;
+    if (tokenToCheck) {
+        const ok = await isTokenValid(tokenToCheck);
+        if (!ok) {
+            showTopToast('This session token has already been used or expired.');
+            try {
+                localStorage.removeItem('activeToken');
+                localStorage.removeItem('studentNum');
+                localStorage.removeItem('studentName');
+                localStorage.removeItem('studentID');
+            } catch(e) { }
+            setTimeout(() => location.replace('index.html'), 900);
+            return;
+        }
+        localStorage.setItem('activeToken', tokenToCheck);
+        activeToken = tokenToCheck;
     }
-    // token is valid -> ensure stored
-    localStorage.setItem('activeToken', tokenToCheck);
-    activeToken = tokenToCheck;
-  }
 
-  // continue normal flow: determine which student id to load
-  const storedStudentId = localStorage.getItem('studentID') || localStorage.getItem('studentNum') || null;
-  const finalStudentId = urlStudentId || storedStudentId;
+    const storedStudentId = localStorage.getItem('studentID') || localStorage.getItem('studentNum') || null;
+    const finalStudentId = urlStudentId || storedStudentId;
 
-  if (finalStudentId) {
-    loadStudentInfo(finalStudentId);
-  } else {
-    showTopToast('No student ID found. Please scan first.');
-    setTimeout(() => window.location.href = 'secondScanActivity.html', 900);
-  }
+    if (finalStudentId) {
+        loadStudentInfo(finalStudentId);
+        // Start notification timer
+        startPushNotifications();
+    } else {
+        showTopToast('No student ID found. Please scan first.');
+        setTimeout(() => window.location.href = 'finishScanActivity.html', 900);
+    }
+
 }).catch(err => {
-  console.error(err);
-  showTopToast('Auth failed: ' + (err && err.message ? err.message : ''));
+    console.error(err);
+    showTopToast('Auth failed: ' + (err && err.message ? err.message : ''));
 });
 
 async function loadStudentInfo(studentId) {
@@ -180,24 +281,18 @@ async function loadStudentInfo(studentId) {
             const d = snap.val();
             const name = (d.name || d.fullName || localStorage.getItem('studentName') || '').trim();
             const id = d.studentNumber || d.studentID || studentId;
+
             currentStudentName = name || '';
             currentStudentID = id || '';
 
-            // show ONLY first name
             showFirstNameOnly(currentStudentName || 'Unknown');
             tvStudentID.textContent = 'ID: ' + (currentStudentID || '');
             etStudentNumber.value = currentStudentID || '';
 
-            // persist full name for DB uses
             localStorage.setItem('studentNum', studentId);
             localStorage.setItem('studentID', currentStudentID);
             localStorage.setItem('studentName', currentStudentName);
-
-            // ensure layout remains correct
-            debouncedReflow();
-
         } else {
-            // Use stored full name if DB not found, but display first name only
             const storedFull = localStorage.getItem('studentName') || 'Unknown';
             showFirstNameOnly(storedFull);
             tvStudentID.textContent = 'ID: ' + (studentId || '');
@@ -205,7 +300,6 @@ async function loadStudentInfo(studentId) {
             currentStudentName = storedFull;
             currentStudentID = studentId || '';
             showTopToast('Student record not found; using provided ID');
-            debouncedReflow();
         }
     } catch (err) {
         console.error(err);
@@ -213,7 +307,7 @@ async function loadStudentInfo(studentId) {
     }
 }
 
-// Submit feedback
+// ============ SUBMIT FEEDBACK ============
 btnSubmitFeedback.addEventListener('click', async () => {
     const subject = etSubject.value.trim();
     const description = etDescription.value.trim();
@@ -229,7 +323,6 @@ btnSubmitFeedback.addEventListener('click', async () => {
     const date = `${yyyy}-${mm}-${dd}`;
 
     const payload = {
-        // keep full name in DB
         name: currentStudentName || localStorage.getItem('studentName') || 'Unknown',
         studentNumber: studentNum,
         subject,
@@ -249,15 +342,18 @@ btnSubmitFeedback.addEventListener('click', async () => {
     }
 });
 
-// Nav helpers (drawables)
+// ============ NAV HELPERS ============
 function navHome() {
     const tok = localStorage.getItem('activeToken') || '';
     if (tok) window.location.href = `finishScanActivity.html?token=${tok}`;
     else window.location.href = 'finishScanActivity.html';
 }
+
 function navBlogs() { window.open('https://www.sti.edu/blog1.asp', '_blank'); }
+
 function navFeedback() { showTopToast('You are on Feedback'); }
-// Logout flow (with Firebase session update)
+
+// ============ LOGOUT FLOW ============
 function navLogout() {
     logoutDialog.style.display = 'flex';
     requestAnimationFrame(() => logoutDialog.classList.add('show'));
@@ -268,13 +364,12 @@ btnLogoutYes.addEventListener('click', async () => {
     hideLogoutDialog(async () => {
         const studentNum = localStorage.getItem('studentNum');
         const name = localStorage.getItem('studentName') || currentStudentName || 'Unknown';
-        const activeToken = localStorage.getItem('activeToken');
+        const activeTokenVal = localStorage.getItem('activeToken');
         const now = Date.now();
         const humanDate = new Date(now).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 
         try {
             if (studentNum) {
-                // Try to update the latest session in Students/{studentNum}/sessions
                 const sessionsSnap = await get(ref(db, `Students/${studentNum}/sessions`));
                 let candidateKey = null;
 
@@ -308,22 +403,31 @@ btnLogoutYes.addEventListener('click', async () => {
             console.error('Logout write error', e);
             showTopToast('Failed to record logout to DB');
         } finally {
-            // clear localStorage & redirect
+            // Invalidate token
+            try {
+                const tok = activeTokenVal || localStorage.getItem('activeToken');
+                if (tok) {
+                    await update(ref(db, `SessionsByToken/${tok}`), { invalidated: true, logoutTime: now });
+                }
+            } catch(e) {
+                console.warn('Token invalidate failed:', e);
+            }
+
+            stopPushNotifications();
             localStorage.removeItem('studentNum');
             localStorage.removeItem('studentName');
             localStorage.removeItem('studentID');
             localStorage.removeItem('activeToken');
+
             setTimeout(() => window.location.href = 'thankyou.html', 900);
         }
     });
 });
 
 btnLogoutNo.addEventListener('click', () => {
-    logoutDialog.classList.remove('show');
-    logoutDialog.setAttribute('aria-hidden', 'true');
+    hideLogoutDialog();
 });
 
-// helper to hide dialog
 function hideLogoutDialog(callback) {
     logoutDialog.classList.remove('show');
     logoutDialog.setAttribute('aria-hidden', 'true');
@@ -333,7 +437,14 @@ function hideLogoutDialog(callback) {
     }, 260);
 }
 
-// make nav helpers available for inline onclicks
+window.openHelp = () => window.open('https://library.sticollegesurigao.com/contact-us/', '_blank');
+window.openLibrary = () => window.open('https://login.ebsco.com/', '_blank');
+window.openELMS = () => window.open('https://elms.sti.edu/', '_blank');
+window.openSite = () => window.open('https://library.sticollegesurigao.com/', '_blank');
+window.openFeedback = () => navFeedback();
+window.onBlogInfo = (i) => { if (i === 1) window.open('https://www.sti.edu/blog1.asp', '_blank'); else showTopToast('Opening blog ' + i); };
+
+// Make nav helpers available for inline onclicks
 window.navHome = navHome;
 window.navBlogs = navBlogs;
 window.navFeedback = navFeedback;

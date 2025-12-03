@@ -11,16 +11,6 @@ const firebaseConfig = {
   appId: "1:817516970962:web:13b35185538cd472eebe0b"
 };
 
-// Add this script to enable the top header blur on scroll
-window.addEventListener('scroll', function() {
-    const topHeader = document.getElementById('topHeader');
-    if (window.scrollY > 20) {
-        topHeader.classList.add('scrolled');
-    } else {
-        topHeader.classList.remove('scrolled');
-    }
-});
-
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const btnScan = document.getElementById('btnScanQR');
