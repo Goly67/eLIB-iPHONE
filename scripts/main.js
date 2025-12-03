@@ -25,7 +25,6 @@ if ('serviceWorker' in navigator) {
 
 const topToast = document.getElementById('topToast');
 
-/*
     (function () {
       const ua = navigator.userAgent || navigator.vendor || window.opera;
       const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
@@ -53,7 +52,7 @@ if (!token) {
     window.location.href = 'scan.html';
 } else {
     sessionStorage.setItem('qrSessionToken', token); // <-- save token
-} */
+}
 
 function showTopToast(message) {
   topToast.textContent = message;
@@ -312,3 +311,4 @@ if (btnNotif) {
     }
   });
 }
+
