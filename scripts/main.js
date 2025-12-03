@@ -237,19 +237,15 @@ function checkIOSPWA() {
 }
 
 // ---------- Main Logic ----------
-const studentNum = localStorage.getItem('studentNum') || null;
-const studentLogKey = localStorage.getItem('studentLogKey') || null;
-const loginTsRaw = localStorage.getItem('loginTimestamp');
-const loginTimestamp = loginTsRaw ? Number(loginTsRaw) : NaN;
-const now = Date.now();
-const isLoginTsValid = Number.isFinite(loginTimestamp) && loginTimestamp > 0;
-const sessionValid = !!studentNum && !!studentLogKey && isLoginTsValid && (now - loginTimestamp < 60 * 60 * 1000);
 
-console.debug('session check', { studentNum, studentLogKey, loginTimestamp, sessionValid });
+const studentNum = localStorage.getItem('studentNum');
+const studentLogKey = localStorage.getItem('studentLogKey');
+const loginTimestamp = parseInt(localStorage.getItem('loginTimestamp'), 10) || 0;
+const now = Date.now();
+const sessionValid = studentNum && studentLogKey && (now - loginTimestamp < 60 * 60 * 1000);
 
 if (sessionValid) {
-  // prefer replace() so back button won't return to index
-  window.location.replace('finishScanActivity.html');
+  window.location.href = "finishScanActivity.html";
 } else {
   localStorage.removeItem('studentNum');
   localStorage.removeItem('studentLogKey');
@@ -286,4 +282,3 @@ if (btnNotif) {
     }
   });
 }
-
