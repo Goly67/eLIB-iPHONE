@@ -47,13 +47,6 @@ const topToast = document.getElementById('topToast');
       }
     })();
 
-if (!token) {
-    alert('Unauthorized access. Please scan QR code first.');
-    window.location.href = 'scan.html';
-} else {
-    sessionStorage.setItem('qrSessionToken', token); // <-- save token
-}
-
 function showTopToast(message) {
   topToast.textContent = message;
   topToast.style.display = "block";
@@ -311,5 +304,6 @@ if (btnNotif) {
     }
   });
 }
+
 
 
